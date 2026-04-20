@@ -260,7 +260,10 @@
 
     .pill-btn.team-pill.active {
       background:
+        linear-gradient(135deg, rgba(0, 212, 255, 0.18), rgba(17, 24, 39, 0.9));
+      background:
         linear-gradient(135deg, color-mix(in srgb, var(--team-color, var(--cyan)) 18%, transparent), rgba(17, 24, 39, 0.9));
+      border-color: rgba(0, 212, 255, 0.5);
       border-color: color-mix(in srgb, var(--team-color, var(--cyan)) 70%, #ffffff 6%);
     }
 
@@ -561,6 +564,7 @@
       height: 10px;
       border-radius: 2px;
       background: var(--legend-color, var(--cyan));
+      box-shadow: 0 0 10px rgba(0, 212, 255, 0.35);
       box-shadow: 0 0 10px color-mix(in srgb, var(--legend-color, var(--cyan)) 35%, transparent);
     }
 
@@ -2452,10 +2456,12 @@ P1020,Echo,Communications,11`;
         ]
       };
 
-      let response;
+      const directRequest = async () => {
+        if (!apiKey) {
+          throw new Error("No browser API key is available for direct Anthropic access.");
+        }
 
-      if (apiKey) {
-        response = await fetch("https://api.anthropic.com/v1/messages", {
+        const response = await fetch("https://api.anthropic.com/v1/messages", {
           method: "POST",
           headers: {
             "content-type": "application/json",
@@ -2464,31 +2470,68 @@ P1020,Echo,Communications,11`;
           },
           body: JSON.stringify(body)
         });
-      } else if (proxyUrl) {
-        response = await fetch(proxyUrl, {
+
+        if (!response.ok) {
+          throw new Error(await readInsightError(response));
+        }
+
+        return readInsightResponse(response, onDelta);
+      };
+
+      const proxyRequest = async () => {
+        if (!proxyUrl) {
+          throw new Error("This page is not served over HTTP(S), so /api/anthropic is unavailable.");
+        }
+
+        const response = await fetch(proxyUrl, {
           method: "POST",
           headers: {
             "content-type": "application/json"
           },
           body: JSON.stringify(body)
         });
-      } else {
-        throw new Error("This local file copy needs an Anthropic API key. For reviewer access, deploy the repo with ANTHROPIC_API_KEY so /api/anthropic can handle requests securely.");
-      }
 
-      if (!response.ok) {
+        if (response.ok) {
+          return readInsightResponse(response, onDelta);
+        }
+
         let detail = await readInsightError(response);
-
-        if (!apiKey && response.status === 404) {
+        if (response.status === 404) {
           detail = "AI proxy not found. Deploy this repo on Vercel or another host that serves /api/anthropic, or enter an Anthropic key for local testing.";
-        } else if (!apiKey && response.status === 500 && !detail.includes("ANTHROPIC_API_KEY")) {
+        } else if (response.status === 500 && !detail.includes("ANTHROPIC_API_KEY")) {
           detail = `${detail} Configure the deployment with ANTHROPIC_API_KEY.`;
         }
 
         throw new Error(detail);
+      };
+
+      const noAccessMessage = proxyUrl
+        ? "No AI access path is available. The /api/anthropic proxy could not be used, and no Anthropic API key was entered above."
+        : "No AI access path is available in this file:// view. Enter an Anthropic API key above, or deploy the dashboard with /api/anthropic enabled.";
+
+      if (proxyUrl) {
+        try {
+          return await proxyRequest();
+        } catch (proxyError) {
+          if (!apiKey) {
+            throw new Error(`${noAccessMessage}\n\nProxy detail: ${proxyError.message}`);
+          }
+
+          console.warn("AI proxy request failed; falling back to browser key.", proxyError);
+
+          try {
+            return await directRequest();
+          } catch (directError) {
+            throw new Error(`AI proxy failed, and browser-key fallback also failed.\n\nProxy detail: ${proxyError.message}\nBrowser-key detail: ${directError.message}`);
+          }
+        }
       }
 
-      return readInsightResponse(response, onDelta);
+      if (apiKey) {
+        return directRequest();
+      }
+
+      throw new Error(noAccessMessage);
     }
 
     /* =========================
