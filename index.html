@@ -2745,15 +2745,33 @@ P1020,Echo,Communications,11`;
           .attr("stroke", "rgba(148,163,184,0.24)")
           .attr("stroke-width", 1);
 
-        group.append("text")
-          .attr("x", Math.cos(angle) * (radius + 22))
-          .attr("y", Math.sin(angle) * (radius + 22))
+        const labelX = Math.cos(angle) * (radius + 22);
+        const labelY = Math.sin(angle) * (radius + 22);
+        const labelAnchor = Math.abs(Math.cos(angle)) < 0.15 ? "middle" : Math.cos(angle) > 0 ? "start" : "end";
+        const labelBaseline = Math.abs(Math.sin(angle)) < 0.15 ? "middle" : Math.sin(angle) > 0 ? "hanging" : "ideographic";
+        const labelWords = metric.label.split(" ");
+        const needsWrap = metric.label.length > 18 && labelWords.length >= 2;
+        const textEl = group.append("text")
+          .attr("x", labelX)
+          .attr("y", labelY)
           .attr("fill", "#cbd5e1")
           .attr("font-size", 11)
           .attr("font-family", "var(--mono)")
-          .attr("text-anchor", Math.abs(Math.cos(angle)) < 0.15 ? "middle" : Math.cos(angle) > 0 ? "start" : "end")
-          .attr("alignment-baseline", Math.abs(Math.sin(angle)) < 0.15 ? "middle" : Math.sin(angle) > 0 ? "hanging" : "ideographic")
-          .text(metric.label);
+          .attr("text-anchor", labelAnchor)
+          .attr("alignment-baseline", labelBaseline);
+        if (needsWrap) {
+          const mid = Math.ceil(labelWords.length / 2);
+          textEl.append("tspan")
+            .attr("x", labelX)
+            .attr("dy", "-0.55em")
+            .text(labelWords.slice(0, mid).join(" "));
+          textEl.append("tspan")
+            .attr("x", labelX)
+            .attr("dy", "1.2em")
+            .text(labelWords.slice(mid).join(" "));
+        } else {
+          textEl.text(metric.label);
+        }
       });
 
       const line = d3.line()
