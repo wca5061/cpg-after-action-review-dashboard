@@ -680,7 +680,7 @@
 
     .finding-chart {
       width: 100%;
-      height: 54px;
+      height: 62px;
       display: block;
     }
 
@@ -3534,14 +3534,36 @@ P1020,Echo,Communications,11`;
     }
 
     /**
+     * Abbreviate a finding-card bar label so dense micro charts remain readable.
+     * @param {string} label
+     * @returns {string}
+     */
+    function abbreviateMiniLabel(label) {
+      const explicit = {
+        "Risk Assessment": "Risk",
+        "Situational Awareness": "Situat.",
+        "Resource Allocation": "Resource",
+        "Pattern Recognition": "Pattern",
+        Communication: "Comm",
+        Deliberate: "Delib",
+        "Time-Critical": "Time-C",
+        Collaborative: "Collab"
+      };
+
+      if (explicit[label]) return explicit[label];
+      if (label.length <= 8) return label;
+      return `${label.slice(0, 7)}.`;
+    }
+
+    /**
      * Render a small bar chart for a finding card.
      * @param {d3.Selection<SVGSVGElement, unknown, null, undefined>} svg
      * @param {{label:string,value:number,color:string}[]} data
      */
     function renderMiniBars(svg, data) {
-      const width = 180;
-      const height = 54;
-      const margin = { top: 6, right: 6, bottom: 16, left: 6 };
+      const width = 196;
+      const height = 62;
+      const margin = { top: 6, right: 6, bottom: 18, left: 6 };
       const x = d3.scaleBand().domain(data.map((d) => d.label)).range([margin.left, width - margin.right]).padding(0.18);
       const y = d3.scaleLinear().domain([0, d3.max(data, (d) => d.value) ?? 0]).nice().range([height - margin.bottom, margin.top]);
       svg.selectAll("*").remove();
@@ -3559,11 +3581,12 @@ P1020,Echo,Communications,11`;
         .data(data)
         .join("text")
         .attr("x", (d) => (x(d.label) ?? 0) + x.bandwidth() / 2)
-        .attr("y", height - 2)
+        .attr("y", height - 3)
         .attr("fill", "#94a3b8")
-        .attr("font-size", 8)
+        .attr("font-size", 7.5)
+        .attr("font-family", "var(--mono)")
         .attr("text-anchor", "middle")
-        .text((d) => d.label.length > 10 ? `${d.label.slice(0, 8)}…` : d.label);
+        .text((d) => abbreviateMiniLabel(d.label));
     }
 
     /**
