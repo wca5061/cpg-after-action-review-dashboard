@@ -2944,11 +2944,12 @@ P1020,Echo,Communications,11`;
         .x((d) => x(d.day))
         .y((d) => yStress(d.value))
         .curve(d3.curveMonotoneX);
+      const stressReferenceColor = "#e2e8f0";
 
       g.append("path")
         .datum(stressSeries)
         .attr("fill", "none")
-        .attr("stroke", "#f59e0b")
+        .attr("stroke", stressReferenceColor)
         .attr("stroke-width", 2.2)
         .attr("stroke-dasharray", "6,5")
         .attr("d", stressLine)
@@ -2960,7 +2961,7 @@ P1020,Echo,Communications,11`;
         .attr("x", innerWidth - 4)
         .attr("y", 10)
         .attr("text-anchor", "end")
-        .attr("fill", "#fbbf24")
+        .attr("fill", stressReferenceColor)
         .attr("font-size", 11)
         .attr("font-family", "var(--mono)")
         .text("Avg Stress (all visible teams)");
@@ -2970,7 +2971,7 @@ P1020,Echo,Communications,11`;
       const legendContainer = document.getElementById("timeline-legend");
       const stressBadge = document.createElement("div");
       stressBadge.className = "legend-label";
-      stressBadge.innerHTML = `<span class="legend-swatch" style="--legend-color:#f59e0b"></span><span>Stress reference</span>`;
+      stressBadge.innerHTML = `<span class="legend-swatch" style="--legend-color:${stressReferenceColor}"></span><span>Stress reference</span>`;
       legendContainer.appendChild(stressBadge);
     }
 
