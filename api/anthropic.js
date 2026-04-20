@@ -1,48 +1,62 @@
 /**
- * Minimal Anthropic proxy for hosted reviewer access.
- * Keeps the API key server-side so external reviewers can use the AI panel
- * without entering their own credential in the browser.
+ * Anthropic Messages API proxy for Vercel serverless deployment.
+ * Keeps the Anthropic key on the server while allowing browser clients
+ * to call the dashboard's AI panel through the same-origin API route.
  */
 
 const ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
+const ANTHROPIC_VERSION = "2023-06-01";
 
 /**
- * Read the raw request body when the platform has not already parsed it.
- * @param {import("http").IncomingMessage} req
+ * Apply CORS headers for browser access, including OPTIONS preflight.
+ * @param {import("http").ServerResponse} res
+ */
+function setCorsHeaders(res) {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+}
+
+/**
+ * Read the incoming request body as a JSON string.
+ * If Vercel has already parsed the body, re-serialize it.
+ * @param {import("http").IncomingMessage & { body?: unknown }} req
  * @returns {Promise<string>}
  */
-function readRawBody(req) {
+async function readBodyAsJsonString(req) {
+  if (typeof req.body === "string") {
+    return req.body;
+  }
+
+  if (req.body && typeof req.body === "object") {
+    return JSON.stringify(req.body);
+  }
+
   return new Promise((resolve, reject) => {
     let data = "";
     req.on("data", (chunk) => {
       data += chunk;
     });
-    req.on("end", () => resolve(data));
+    req.on("end", () => resolve(data || "{}"));
     req.on("error", reject);
   });
 }
 
 /**
- * Normalize an incoming JSON request body.
- * @param {import("http").IncomingMessage & { body?: unknown }} req
- * @returns {Promise<object>}
+ * Vercel serverless handler for the Anthropic proxy route.
+ * @param {import("http").IncomingMessage & { body?: unknown; method?: string }} req
+ * @param {import("http").ServerResponse & { status: (code:number) => any; json: (body: unknown) => any; end: (body?: string) => any }} res
  */
-async function readJson(req) {
-  if (req.body && typeof req.body === "object") {
-    return req.body;
+export default async function handler(req, res) {
+  setCorsHeaders(res);
+
+  if (req.method === "OPTIONS") {
+    res.status(200).end();
+    return;
   }
 
-  if (typeof req.body === "string" && req.body.trim()) {
-    return JSON.parse(req.body);
-  }
-
-  const rawBody = await readRawBody(req);
-  return rawBody ? JSON.parse(rawBody) : {};
-}
-
-module.exports = async function handler(req, res) {
   if (req.method !== "POST") {
-    res.setHeader("Allow", "POST");
+    res.setHeader("Allow", "POST, OPTIONS");
     res.status(405).json({
       error: {
         message: "Method not allowed. Use POST."
@@ -61,13 +75,13 @@ module.exports = async function handler(req, res) {
     return;
   }
 
-  let payload;
+  let requestBody;
   try {
-    payload = await readJson(req);
+    requestBody = await readBodyAsJsonString(req);
   } catch (error) {
     res.status(400).json({
       error: {
-        message: "Invalid JSON body."
+        message: "Unable to read request body."
       }
     });
     return;
@@ -78,39 +92,14 @@ module.exports = async function handler(req, res) {
       method: "POST",
       headers: {
         "content-type": "application/json",
-        "anthropic-version": "2023-06-01",
-        "x-api-key": apiKey
+        "x-api-key": apiKey,
+        "anthropic-version": ANTHROPIC_VERSION
       },
-      body: JSON.stringify(payload)
+      body: requestBody
     });
 
-    res.statusCode = upstream.status;
-    res.setHeader("Cache-Control", "no-store");
-    res.setHeader(
-      "Content-Type",
-      upstream.headers.get("content-type") || "application/json; charset=utf-8"
-    );
-
-    const requestId = upstream.headers.get("request-id");
-    if (requestId) {
-      res.setHeader("x-anthropic-request-id", requestId);
-    }
-
-    if (!upstream.body) {
-      const text = await upstream.text();
-      res.end(text);
-      return;
-    }
-
-    const reader = upstream.body.getReader();
-
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      res.write(Buffer.from(value));
-    }
-
-    res.end();
+    const responseJson = await upstream.json();
+    res.status(200).json(responseJson);
   } catch (error) {
     res.status(502).json({
       error: {
@@ -118,4 +107,4 @@ module.exports = async function handler(req, res) {
       }
     });
   }
-};
+}
