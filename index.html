@@ -1,0 +1,3852 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Exercise After-Action Review Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+  <style>
+    :root {
+      --bg: #0a0e1a;
+      --panel: #111827;
+      --panel-soft: #0f1726;
+      --panel-elevated: #111b2b;
+      --grid: #1e2d40;
+      --cyan: #00d4ff;
+      --amber: #f59e0b;
+      --danger: #ef4444;
+      --success: #10b981;
+      --text: #e2e8f0;
+      --text-muted: #94a3b8;
+      --purple: #a78bfa;
+      --echo: #f87171;
+      --shadow: 0 16px 48px rgba(0, 0, 0, 0.28);
+      --mono: "SFMono-Regular", "Menlo", "Consolas", monospace;
+      --radius: 4px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      min-height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Inter", sans-serif;
+    }
+
+    body {
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    body::before,
+    body::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    body::before {
+      background-image:
+        linear-gradient(rgba(0, 212, 255, 0.045) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 212, 255, 0.035) 1px, transparent 1px);
+      background-size: 86px 86px;
+      opacity: 0.35;
+      animation: grid-drift 24s linear infinite;
+    }
+
+    body::after {
+      background:
+        repeating-linear-gradient(
+          to bottom,
+          rgba(0, 212, 255, 0.018) 0px,
+          rgba(0, 212, 255, 0.018) 1px,
+          transparent 3px,
+          transparent 8px
+        ),
+        linear-gradient(
+          to bottom,
+          transparent 0%,
+          rgba(0, 212, 255, 0.06) 48%,
+          rgba(0, 212, 255, 0.02) 52%,
+          transparent 100%
+        );
+      background-size: 100% 8px, 100% 320px;
+      animation: scan 10s linear infinite;
+      opacity: 0.25;
+    }
+
+    @keyframes grid-drift {
+      0% { transform: translate3d(0, 0, 0); }
+      100% { transform: translate3d(-72px, -72px, 0); }
+    }
+
+    @keyframes scan {
+      0% { transform: translateY(-30%); }
+      100% { transform: translateY(30%); }
+    }
+
+    .app-shell {
+      position: relative;
+      z-index: 1;
+    }
+
+    .sidebar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      width: 260px;
+      padding: 18px 16px 20px;
+      background:
+        linear-gradient(180deg, rgba(17, 24, 39, 0.98), rgba(10, 14, 26, 0.98)),
+        var(--panel);
+      border-right: 1px solid rgba(30, 45, 64, 0.95);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      box-shadow: inset -1px 0 0 rgba(0, 212, 255, 0.06);
+    }
+
+    .sidebar-header {
+      padding-bottom: 12px;
+      border-bottom: 1px solid rgba(30, 45, 64, 0.95);
+    }
+
+    .eyebrow {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--cyan);
+      opacity: 0.9;
+    }
+
+    .sidebar-title {
+      margin: 6px 0 4px;
+      font-weight: 800;
+      font-size: 16px;
+      letter-spacing: 0.04em;
+    }
+
+    .sidebar-subtext {
+      margin: 0;
+      color: var(--text-muted);
+      font-size: 12px;
+      line-height: 1.55;
+    }
+
+    .sidebar-content {
+      flex: 1;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+
+    .sidebar-content::-webkit-scrollbar,
+    .drawer-table-wrap::-webkit-scrollbar,
+    .terminal-history::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+
+    .sidebar-content::-webkit-scrollbar-thumb,
+    .drawer-table-wrap::-webkit-scrollbar-thumb,
+    .terminal-history::-webkit-scrollbar-thumb {
+      background: rgba(148, 163, 184, 0.22);
+      border-radius: 999px;
+    }
+
+    .filter-group {
+      margin-bottom: 16px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid rgba(30, 45, 64, 0.72);
+    }
+
+    .filter-group:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+      margin-bottom: 0;
+    }
+
+    .filter-label {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 10px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      color: var(--text);
+      text-transform: uppercase;
+    }
+
+    .filter-meta {
+      color: var(--text-muted);
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 0.12em;
+    }
+
+    .pill-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .pill-btn,
+    .legend-chip,
+    .action-btn,
+    .quick-btn,
+    .view-toggle {
+      appearance: none;
+      border: 1px solid rgba(30, 45, 64, 0.95);
+      border-radius: var(--radius);
+      color: var(--text);
+      background: rgba(15, 23, 38, 0.85);
+      transition: background 160ms ease, border-color 160ms ease, transform 160ms ease, opacity 160ms ease;
+      cursor: pointer;
+    }
+
+    .pill-btn {
+      padding: 7px 10px;
+      font-size: 12px;
+      font-weight: 600;
+      line-height: 1.25;
+      min-height: 32px;
+    }
+
+    .pill-btn:hover,
+    .legend-chip:hover,
+    .action-btn:hover,
+    .quick-btn:hover,
+    .view-toggle:hover {
+      border-color: rgba(0, 212, 255, 0.45);
+      transform: translateY(-1px);
+    }
+
+    .pill-btn.active {
+      background: rgba(0, 212, 255, 0.12);
+      border-color: rgba(0, 212, 255, 0.5);
+      box-shadow: inset 0 0 0 1px rgba(0, 212, 255, 0.08);
+    }
+
+    .pill-btn.team-pill {
+      position: relative;
+      padding-left: 14px;
+    }
+
+    .pill-btn.team-pill::before {
+      content: "";
+      position: absolute;
+      left: 6px;
+      top: 50%;
+      width: 4px;
+      height: 16px;
+      transform: translateY(-50%);
+      border-radius: 999px;
+      background: var(--team-color, var(--cyan));
+      opacity: 0.9;
+    }
+
+    .pill-btn.team-pill.active {
+      background:
+        linear-gradient(135deg, color-mix(in srgb, var(--team-color, var(--cyan)) 18%, transparent), rgba(17, 24, 39, 0.9));
+      border-color: color-mix(in srgb, var(--team-color, var(--cyan)) 70%, #ffffff 6%);
+    }
+
+    .sidebar-footer {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding-top: 14px;
+      border-top: 1px solid rgba(30, 45, 64, 0.95);
+    }
+
+    .status-card {
+      background: rgba(17, 27, 43, 0.92);
+      border: 1px solid rgba(30, 45, 64, 0.9);
+      padding: 10px 12px;
+    }
+
+    .status-card strong {
+      display: block;
+      margin-bottom: 3px;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--cyan);
+    }
+
+    .status-card span {
+      color: var(--text-muted);
+      font-size: 12px;
+    }
+
+    .main-content {
+      margin-left: 260px;
+      padding: 20px 24px 40px;
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 8;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 20px;
+      padding: 18px 0 18px;
+      backdrop-filter: blur(14px);
+      background: linear-gradient(180deg, rgba(10, 14, 26, 0.94), rgba(10, 14, 26, 0.68));
+      border-bottom: 1px solid rgba(30, 45, 64, 0.85);
+      margin-bottom: 18px;
+    }
+
+    .topbar h1 {
+      margin: 4px 0 8px;
+      font-size: clamp(22px, 2vw, 30px);
+      line-height: 1.05;
+      letter-spacing: 0.08em;
+      font-weight: 800;
+    }
+
+    .filter-summary {
+      margin: 0;
+      color: var(--text-muted);
+      font-size: 13px;
+      line-height: 1.5;
+      max-width: 780px;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .action-btn {
+      padding: 10px 14px;
+      font-weight: 700;
+      font-size: 12px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      background: rgba(15, 23, 38, 0.86);
+    }
+
+    .action-btn.primary {
+      background: linear-gradient(135deg, rgba(0, 212, 255, 0.16), rgba(17, 24, 39, 0.92));
+      border-color: rgba(0, 212, 255, 0.45);
+    }
+
+    .kpi-strip {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+      margin-bottom: 18px;
+    }
+
+    .kpi-card,
+    .panel,
+    .finding-card {
+      background:
+        linear-gradient(180deg, rgba(17, 24, 39, 0.98), rgba(11, 18, 31, 0.98));
+      border: 1px solid rgba(30, 45, 64, 0.95);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .kpi-card::before,
+    .panel::before,
+    .finding-card::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(0, 212, 255, 0.38), transparent);
+      opacity: 0.8;
+    }
+
+    .kpi-card {
+      padding: 16px 16px 14px;
+      min-height: 138px;
+    }
+
+    .kpi-label {
+      color: var(--text-muted);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .kpi-value-row {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 12px;
+      margin-bottom: 10px;
+    }
+
+    .kpi-value {
+      font-size: 34px;
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      line-height: 1;
+    }
+
+    .kpi-delta {
+      font-size: 12px;
+      font-family: var(--mono);
+      white-space: nowrap;
+      color: var(--text-muted);
+    }
+
+    .kpi-delta.positive {
+      color: var(--success);
+    }
+
+    .kpi-delta.negative {
+      color: var(--danger);
+    }
+
+    .sparkline-label {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 6px;
+      color: var(--text-muted);
+      font-size: 10px;
+      font-family: var(--mono);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 16px;
+    }
+
+    .panel-wide {
+      grid-column: 1 / -1;
+    }
+
+    .panel {
+      padding: 14px 14px 12px;
+    }
+
+    .panel-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 10px;
+      min-height: 42px;
+    }
+
+    .panel-title {
+      margin: 0;
+      font-size: 14px;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+      font-weight: 800;
+    }
+
+    .panel-subtitle {
+      margin: 4px 0 0;
+      color: var(--text-muted);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .panel-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .view-toggle {
+      padding: 7px 10px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .view-toggle.active {
+      background: rgba(245, 158, 11, 0.15);
+      border-color: rgba(245, 158, 11, 0.48);
+      color: #fcd34d;
+    }
+
+    .chart-wrap {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      min-height: 320px;
+    }
+
+    .chart-wrap.tall {
+      min-height: 430px;
+    }
+
+    .chart-wrap.medium {
+      min-height: 380px;
+    }
+
+    .chart-wrap.short {
+      min-height: 340px;
+    }
+
+    .chart-svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .legend-row,
+    .shape-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 10px;
+      align-items: center;
+    }
+
+    .legend-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .legend-chip.active {
+      border-color: rgba(0, 212, 255, 0.52);
+      background: rgba(0, 212, 255, 0.11);
+      box-shadow: inset 0 0 0 1px rgba(0, 212, 255, 0.12);
+    }
+
+    .legend-chip.dimmed {
+      opacity: 0.45;
+    }
+
+    .legend-swatch,
+    .shape-swatch {
+      flex: 0 0 auto;
+      display: inline-block;
+    }
+
+    .legend-swatch {
+      width: 10px;
+      height: 10px;
+      border-radius: 2px;
+      background: var(--legend-color, var(--cyan));
+      box-shadow: 0 0 10px color-mix(in srgb, var(--legend-color, var(--cyan)) 35%, transparent);
+    }
+
+    .shape-legend {
+      justify-content: space-between;
+      gap: 14px;
+      padding-top: 4px;
+      color: var(--text-muted);
+      font-size: 11px;
+    }
+
+    .shape-legend-left,
+    .shape-legend-right {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .legend-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-family: var(--mono);
+      letter-spacing: 0.04em;
+    }
+
+    .findings-panel {
+      padding: 0;
+      overflow: hidden;
+    }
+
+    .findings-panel summary {
+      list-style: none;
+      cursor: pointer;
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      border-bottom: 1px solid rgba(30, 45, 64, 0.82);
+    }
+
+    .findings-panel summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .summary-copy strong {
+      display: block;
+      font-size: 14px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .summary-copy span {
+      color: var(--text-muted);
+      font-size: 12px;
+    }
+
+    .summary-toggle {
+      color: var(--cyan);
+      font-family: var(--mono);
+      font-size: 12px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .findings-body {
+      padding: 16px;
+    }
+
+    .findings-grid {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .finding-card {
+      padding: 14px;
+      min-height: 198px;
+    }
+
+    .finding-kicker {
+      color: var(--cyan);
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    .finding-title {
+      margin: 0 0 10px;
+      font-size: 16px;
+      line-height: 1.28;
+      font-weight: 800;
+    }
+
+    .finding-text {
+      margin: 0 0 14px;
+      color: var(--text-muted);
+      font-size: 12px;
+      line-height: 1.55;
+      min-height: 56px;
+    }
+
+    .finding-chart {
+      width: 100%;
+      height: 54px;
+      display: block;
+    }
+
+    .ai-panel {
+      border-color: rgba(0, 212, 255, 0.42);
+      box-shadow:
+        var(--shadow),
+        inset 0 0 0 1px rgba(0, 212, 255, 0.08);
+    }
+
+    .ai-panel .panel-head {
+      margin-bottom: 14px;
+    }
+
+    .ai-controls {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 12px;
+      align-items: stretch;
+      margin-bottom: 12px;
+    }
+
+    .ai-input-stack {
+      display: grid;
+      gap: 10px;
+    }
+
+    .api-key-row {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .api-key-row label {
+      font-size: 11px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      font-weight: 700;
+    }
+
+    .terminal-input,
+    .terminal-textarea {
+      width: 100%;
+      background: rgba(8, 12, 21, 0.92);
+      border: 1px solid rgba(30, 45, 64, 0.95);
+      color: var(--text);
+      padding: 11px 12px;
+      border-radius: var(--radius);
+      font-family: var(--mono);
+      font-size: 13px;
+      transition: border-color 160ms ease, box-shadow 160ms ease;
+    }
+
+    .terminal-input:focus,
+    .terminal-textarea:focus {
+      outline: none;
+      border-color: rgba(0, 212, 255, 0.5);
+      box-shadow: 0 0 0 1px rgba(0, 212, 255, 0.14);
+    }
+
+    .terminal-textarea {
+      resize: vertical;
+      min-height: 92px;
+      line-height: 1.5;
+    }
+
+    .quick-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .quick-btn {
+      padding: 8px 10px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+    }
+
+    .generate-btn {
+      min-width: 176px;
+      padding: 12px 18px;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      background: linear-gradient(135deg, rgba(0, 212, 255, 0.18), rgba(17, 24, 39, 0.95));
+      border-color: rgba(0, 212, 255, 0.5);
+    }
+
+    .terminal-window {
+      background: rgba(10, 14, 26, 0.9);
+      border: 1px solid rgba(0, 212, 255, 0.28);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    .terminal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 9px 12px;
+      border-bottom: 1px solid rgba(30, 45, 64, 0.9);
+      background: linear-gradient(180deg, rgba(0, 212, 255, 0.06), rgba(0, 212, 255, 0.01));
+    }
+
+    .terminal-header strong {
+      font-size: 12px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--cyan);
+    }
+
+    .terminal-header span {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .terminal-history {
+      max-height: 430px;
+      overflow-y: auto;
+      padding: 12px;
+      display: grid;
+      gap: 12px;
+    }
+
+    .terminal-entry {
+      border: 1px solid rgba(30, 45, 64, 0.86);
+      background: rgba(15, 23, 38, 0.82);
+      padding: 12px;
+      border-radius: var(--radius);
+    }
+
+    .terminal-entry.loading {
+      border-color: rgba(0, 212, 255, 0.38);
+      box-shadow: inset 0 0 0 1px rgba(0, 212, 255, 0.08);
+    }
+
+    .terminal-question {
+      margin: 0 0 8px;
+      color: #cbd5e1;
+      font-family: var(--mono);
+      font-size: 12px;
+      line-height: 1.5;
+      white-space: pre-wrap;
+    }
+
+    .terminal-answer {
+      margin: 0;
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: 12px;
+      line-height: 1.65;
+      white-space: pre-wrap;
+    }
+
+    .cursor {
+      display: inline-block;
+      width: 8px;
+      height: 14px;
+      background: var(--cyan);
+      vertical-align: -2px;
+      margin-left: 2px;
+      animation: blink 900ms step-end infinite;
+    }
+
+    @keyframes blink {
+      50% { opacity: 0; }
+    }
+
+    .terminal-divider {
+      border-top: 1px dashed rgba(30, 45, 64, 0.86);
+      margin-top: 12px;
+      padding-top: 12px;
+    }
+
+    .tooltip {
+      position: fixed;
+      top: 0;
+      left: 0;
+      transform: translate(-9999px, -9999px);
+      max-width: 320px;
+      padding: 12px 13px;
+      background: rgba(10, 14, 26, 0.95);
+      border: 1px solid rgba(0, 212, 255, 0.78);
+      box-shadow: 0 12px 36px rgba(0, 0, 0, 0.35);
+      backdrop-filter: blur(10px);
+      color: var(--text);
+      pointer-events: none;
+      z-index: 20;
+      font-size: 12px;
+      line-height: 1.55;
+      border-radius: var(--radius);
+      opacity: 0;
+      transition: opacity 120ms ease;
+    }
+
+    .tooltip.visible {
+      opacity: 1;
+    }
+
+    .tooltip strong {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 12px;
+      letter-spacing: 0.08em;
+      color: var(--cyan);
+      text-transform: uppercase;
+    }
+
+    .tooltip .mono {
+      font-family: var(--mono);
+    }
+
+    .drawer-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(4, 8, 15, 0.42);
+      backdrop-filter: blur(3px);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 220ms ease;
+      z-index: 18;
+    }
+
+    .drawer-backdrop.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .detail-drawer {
+      position: fixed;
+      top: 0;
+      right: 0;
+      width: 400px;
+      max-width: 92vw;
+      bottom: 0;
+      background: linear-gradient(180deg, rgba(12, 18, 31, 0.98), rgba(8, 12, 21, 0.99));
+      border-left: 1px solid rgba(30, 45, 64, 0.96);
+      box-shadow: -16px 0 40px rgba(0, 0, 0, 0.36);
+      transform: translateX(100%);
+      transition: transform 240ms ease;
+      z-index: 19;
+      display: grid;
+      grid-template-rows: auto auto 1fr;
+    }
+
+    .detail-drawer.open {
+      transform: translateX(0);
+    }
+
+    .drawer-header {
+      padding: 16px 16px 12px;
+      border-bottom: 1px solid rgba(30, 45, 64, 0.84);
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .drawer-header h3 {
+      margin: 6px 0 4px;
+      font-size: 17px;
+    }
+
+    .drawer-count {
+      color: var(--text-muted);
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .drawer-close {
+      border: 1px solid rgba(30, 45, 64, 0.95);
+      background: rgba(15, 23, 38, 0.88);
+      color: var(--text);
+      cursor: pointer;
+      border-radius: var(--radius);
+      width: 34px;
+      height: 34px;
+      font-size: 18px;
+      line-height: 1;
+    }
+
+    .drawer-meta {
+      padding: 10px 16px;
+      border-bottom: 1px solid rgba(30, 45, 64, 0.8);
+      color: var(--text-muted);
+      font-size: 12px;
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .drawer-table-wrap {
+      overflow: auto;
+    }
+
+    .drawer-table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 1120px;
+      font-size: 12px;
+    }
+
+    .drawer-table thead th {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      background: rgba(11, 18, 31, 0.98);
+      border-bottom: 1px solid rgba(30, 45, 64, 0.95);
+      cursor: pointer;
+      white-space: nowrap;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-size: 10px;
+      color: var(--text-muted);
+    }
+
+    .drawer-table th,
+    .drawer-table td {
+      padding: 10px 12px;
+      border-bottom: 1px solid rgba(30, 45, 64, 0.55);
+      text-align: left;
+      vertical-align: top;
+      white-space: nowrap;
+    }
+
+    .drawer-table tbody tr:hover {
+      background: rgba(0, 212, 255, 0.04);
+    }
+
+    .mono-chip {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--text-muted);
+      letter-spacing: 0.04em;
+    }
+
+    .no-data {
+      display: grid;
+      place-items: center;
+      min-height: 220px;
+      color: var(--text-muted);
+      font-size: 13px;
+      letter-spacing: 0.04em;
+      text-align: center;
+      padding: 24px;
+    }
+
+    .empty-chart-label {
+      fill: var(--text-muted);
+      font-size: 13px;
+      text-anchor: middle;
+    }
+
+    .axis path,
+    .axis line {
+      stroke: rgba(148, 163, 184, 0.28);
+    }
+
+    .axis text {
+      fill: var(--text-muted);
+      font-size: 11px;
+      font-family: var(--mono);
+    }
+
+    .grid-line {
+      stroke: rgba(30, 45, 64, 0.9);
+      stroke-width: 1;
+      shape-rendering: crispEdges;
+    }
+
+    .toast {
+      position: fixed;
+      right: 20px;
+      bottom: 18px;
+      z-index: 25;
+      background: rgba(10, 14, 26, 0.96);
+      border: 1px solid rgba(0, 212, 255, 0.42);
+      color: var(--text);
+      padding: 10px 12px;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      transform: translateY(14px);
+      opacity: 0;
+      transition: opacity 180ms ease, transform 180ms ease;
+      font-size: 12px;
+      pointer-events: none;
+    }
+
+    .toast.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .small-note {
+      color: var(--text-muted);
+      font-size: 11px;
+      line-height: 1.5;
+      font-family: var(--mono);
+    }
+
+    @media (max-width: 1160px) {
+      .kpi-strip {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .dashboard-grid,
+      .findings-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .panel-wide {
+        grid-column: auto;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="eyebrow">Global Filters</div>
+        <div class="sidebar-title">Operational Selection</div>
+        <p class="sidebar-subtext">Every view below is driven by one reactive filter state. Slice the exercise by team, day, scenario, phase, or decision tempo.</p>
+      </div>
+      <div id="filter-groups" class="sidebar-content"></div>
+      <div class="sidebar-footer">
+        <button id="reset-filters-btn" class="action-btn primary" type="button">Reset All Filters</button>
+        <div class="status-card">
+          <strong>Participant Roster</strong>
+          <span id="roster-summary">20 personnel across 5 teams.</span>
+        </div>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <header class="topbar">
+        <div>
+          <div class="eyebrow">Tactical Decision Intelligence</div>
+          <h1>EXERCISE AFTER-ACTION REVIEW</h1>
+          <p id="filter-summary" class="filter-summary">Preparing operational view...</p>
+        </div>
+        <div class="header-actions">
+          <button id="share-view-btn" class="action-btn" type="button">Share View</button>
+          <button id="export-btn" class="action-btn primary" type="button">Export Filtered Data</button>
+        </div>
+      </header>
+
+      <section id="kpi-strip" class="kpi-strip"></section>
+
+      <section class="dashboard-grid">
+        <article class="panel">
+          <div class="panel-head">
+            <div>
+              <h2 class="panel-title">Team Performance Radar</h2>
+              <p class="panel-subtitle">Composite cognitive performance profile by team. Hover to inspect exact axis scores and click a polygon to open the underlying events.</p>
+            </div>
+          </div>
+          <div id="radar-wrap" class="chart-wrap tall">
+            <svg id="radar-chart" class="chart-svg"></svg>
+          </div>
+          <div id="radar-legend" class="legend-row"></div>
+        </article>
+
+        <article class="panel">
+          <div class="panel-head">
+            <div>
+              <h2 class="panel-title">Performance Timeline</h2>
+              <p class="panel-subtitle">Daily accuracy trajectory by team with variance band and a cross-team stress reference line on the secondary axis.</p>
+            </div>
+          </div>
+          <div id="timeline-wrap" class="chart-wrap medium">
+            <svg id="timeline-chart" class="chart-svg"></svg>
+          </div>
+          <div id="timeline-legend" class="legend-row"></div>
+        </article>
+
+        <article class="panel">
+          <div class="panel-head">
+            <div>
+              <h2 class="panel-title">Domain × Team Heatmap</h2>
+              <p class="panel-subtitle">Average accuracy score by cognitive domain and team. Hatched cells indicate fewer than three events in the filtered subset.</p>
+            </div>
+          </div>
+          <div id="heatmap-wrap" class="chart-wrap short">
+            <svg id="heatmap-chart" class="chart-svg"></svg>
+          </div>
+        </article>
+
+        <article class="panel">
+          <div class="panel-head">
+            <div>
+              <h2 class="panel-title">Stress vs. Accuracy Scatter</h2>
+              <p class="panel-subtitle">Decision events sized by response time, shaped by decision type, and colored by team with per-team regression overlays.</p>
+            </div>
+          </div>
+          <div id="scatter-wrap" class="chart-wrap tall">
+            <svg id="scatter-chart" class="chart-svg"></svg>
+          </div>
+          <div id="scatter-legend" class="shape-legend"></div>
+        </article>
+
+        <article class="panel panel-wide">
+          <div class="panel-head">
+            <div>
+              <h2 class="panel-title">Error Flag Analysis</h2>
+              <p class="panel-subtitle">Stacked event composition showing clean decisions plus the three error categories. Toggle between daily and scenario concentration.</p>
+            </div>
+            <div class="panel-actions">
+              <button class="view-toggle active" data-error-mode="exercise_day" type="button">By Day</button>
+              <button class="view-toggle" data-error-mode="scenario" type="button">By Scenario</button>
+            </div>
+          </div>
+          <div id="error-wrap" class="chart-wrap medium">
+            <svg id="error-chart" class="chart-svg"></svg>
+          </div>
+          <div id="error-legend" class="legend-row"></div>
+        </article>
+
+        <details class="panel findings-panel panel-wide" open>
+          <summary>
+            <div class="summary-copy">
+              <strong>KEY FINDINGS</strong>
+              <span>Auto-generated briefing notes derived from the current filtered operational picture.</span>
+            </div>
+            <div class="summary-toggle">Toggle Brief</div>
+          </summary>
+          <div class="findings-body">
+            <div id="findings-grid" class="findings-grid"></div>
+          </div>
+        </details>
+
+        <section class="panel panel-wide ai-panel">
+          <div class="panel-head">
+            <div>
+              <h2 class="panel-title">AI Analyst</h2>
+              <p class="panel-subtitle">Ask for a concise analytical readout. The model receives a live summary of the filtered dataset so the answer stays grounded in the current view.</p>
+            </div>
+          </div>
+
+          <div class="quick-row" id="quick-row"></div>
+
+          <div class="ai-controls">
+            <div class="ai-input-stack">
+              <div class="api-key-row">
+                <label for="anthropic-key-input">Anthropic API Key</label>
+                <input id="anthropic-key-input" class="terminal-input" type="password" placeholder="sk-ant-..." autocomplete="off" />
+                <span class="small-note">Stored in this browser session only. The browser calls Anthropic directly.</span>
+              </div>
+              <textarea id="ai-question" class="terminal-textarea" placeholder="Ask a question about the exercise data..."></textarea>
+            </div>
+            <button id="generate-insight-btn" class="action-btn generate-btn" type="button">Generate Insight</button>
+          </div>
+
+          <div class="terminal-window">
+            <div class="terminal-header">
+              <strong>Analytical Exchange</strong>
+              <span>Showing the last 3 Q&amp;A turns</span>
+            </div>
+            <div id="ai-history" class="terminal-history"></div>
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <div id="drawer-backdrop" class="drawer-backdrop"></div>
+    <aside id="detail-drawer" class="detail-drawer" aria-hidden="true">
+      <div class="drawer-header">
+        <div>
+          <div class="eyebrow">Raw Event Drill-Down</div>
+          <h3 id="drawer-title">Subset Detail</h3>
+          <div id="drawer-count" class="drawer-count">0 rows</div>
+        </div>
+        <button id="drawer-close-btn" class="drawer-close" type="button" aria-label="Close detail drawer">×</button>
+      </div>
+      <div class="drawer-meta">
+        <span id="drawer-sort-label">Sorted by timestamp descending</span>
+        <span class="mono-chip">Click any column header to sort</span>
+      </div>
+      <div class="drawer-table-wrap">
+        <table class="drawer-table">
+          <thead id="drawer-head"></thead>
+          <tbody id="drawer-body"></tbody>
+        </table>
+      </div>
+    </aside>
+
+    <div id="tooltip" class="tooltip"></div>
+    <div id="toast" class="toast"></div>
+  </div>
+
+  <script>
+    /* =========================
+       DATA
+    ========================= */
+
+    const EXERCISE_CSV = String.raw`event_id,timestamp,exercise_day,team,participant_id,role,experience_years,scenario,phase,decision_type,cognitive_domain,accuracy_score,response_time_sec,confidence_rating,stress_level,communication_events,information_overload_flag,communication_breakdown_flag,fixation_error_flag
+E0101,2/11/2026 9:45,3,Alpha,P1003,Operator,5,Crisis Response,Planning,Deliberate,Risk Assessment,93.5,31.9,7.4,7.3,3,1,0,0
+E0059,2/10/2026 14:52,2,Bravo,P1006,Analyst,12,Humanitarian Assistance,Planning,Deliberate,Risk Assessment,96.8,43.6,8.8,4.5,1,0,0,0
+E0172,2/12/2026 10:40,4,Charlie,P1011,Operator,1,Convoy Security,Assessment,Deliberate,Resource Allocation,81.2,47.9,7.5,6.1,7,0,0,0
+E0174,2/12/2026 16:50,4,Charlie,P1009,Team Lead,10,Crisis Response,Assessment,Collaborative,Resource Allocation,89.2,32.2,7.5,5.9,12,0,0,0
+E0157,2/12/2026 7:53,4,Bravo,P1008,Communications,11,Joint Operations,Planning,Collaborative,Situational Awareness,98.4,14.7,7.4,3.3,3,0,0,1
+E0103,2/11/2026 21:44,3,Bravo,P1007,Operator,2,Area Defense,Planning,Time-Critical,Risk Assessment,74.2,10.9,4.8,8.3,4,1,0,0
+E0025,2/9/2026 15:52,1,Charlie,P1012,Communications,1,Area Defense,Planning,Deliberate,Risk Assessment,82.3,43.9,7.5,6,1,0,0,0
+E0009,2/9/2026 16:31,1,Alpha,P1003,Operator,5,Joint Operations,Planning,Collaborative,Situational Awareness,94.1,34,9.2,4.4,8,0,0,1
+E0024,2/9/2026 19:51,1,Charlie,P1012,Communications,1,Area Defense,Planning,Collaborative,Risk Assessment,75,31.2,4.8,6.3,10,0,0,1
+E0145,2/12/2026 10:49,4,Alpha,P1004,Communications,4,Humanitarian Assistance,Planning,Deliberate,Pattern Recognition,78.2,41.1,7.5,5.1,7,0,0,1
+E0074,2/10/2026 9:54,2,Delta,P1015,Operator,9,Reconnaissance,Planning,Deliberate,Pattern Recognition,70.3,56.1,5.5,5.7,8,0,0,0
+E0195,2/12/2026 13:17,4,Echo,P1020,Communications,11,Reconnaissance,Execution,Deliberate,Pattern Recognition,72.8,48.7,4.8,6.6,2,1,0,0
+E0115,2/11/2026 8:35,3,Bravo,P1005,Team Lead,3,Humanitarian Assistance,Assessment,Collaborative,Risk Assessment,60.6,37.4,6,3.7,12,0,0,0
+E0063,2/10/2026 13:47,2,Bravo,P1005,Team Lead,3,Convoy Security,Assessment,Time-Critical,Risk Assessment,91.9,31.4,7.8,5.3,5,0,1,0
+E0161,2/12/2026 8:31,4,Bravo,P1008,Communications,11,Crisis Response,Planning,Time-Critical,Pattern Recognition,85.5,11.1,5.8,9.6,10,0,0,0
+E0189,2/12/2026 19:52,4,Echo,P1019,Operator,12,Joint Operations,Planning,Deliberate,Pattern Recognition,84.1,54.8,7.4,5.3,1,0,0,0
+E0040,2/9/2026 15:36,1,Echo,P1018,Analyst,4,Convoy Security,Execution,Collaborative,Situational Awareness,57,34,2.5,6.4,11,1,0,0
+E0210,2/13/2026 14:54,5,Bravo,P1007,Operator,2,Reconnaissance,Planning,Deliberate,Resource Allocation,93.9,48,8.2,4.9,0,0,1,0
+E0176,2/12/2026 9:28,4,Delta,P1014,Analyst,4,Reconnaissance,Assessment,Deliberate,Resource Allocation,97.7,41.4,7.1,5.6,4,0,1,0
+E0190,2/12/2026 6:07,4,Echo,P1017,Team Lead,9,Convoy Security,Planning,Collaborative,Resource Allocation,81.9,39.7,6.6,1.4,11,0,0,0
+E0221,2/13/2026 19:50,5,Charlie,P1011,Operator,1,Humanitarian Assistance,Execution,Time-Critical,Pattern Recognition,68.6,16.6,5.1,10,0,0,0,0
+E0056,2/10/2026 20:26,2,Bravo,P1008,Communications,11,Convoy Security,Assessment,Collaborative,Communication,80,45.1,7.1,5.4,6,0,0,0
+E0060,2/10/2026 18:14,2,Bravo,P1008,Communications,11,Humanitarian Assistance,Execution,Time-Critical,Pattern Recognition,42.8,33.4,2.8,9.1,7,0,0,0
+E0053,2/10/2026 18:17,2,Alpha,P1004,Communications,4,Reconnaissance,Planning,Collaborative,Risk Assessment,64.8,40.5,5.6,6.4,6,0,0,0
+E0142,2/11/2026 20:33,3,Echo,P1018,Analyst,4,Crisis Response,Planning,Collaborative,Situational Awareness,75.7,36.4,5.9,6,8,0,0,0
+E0055,2/10/2026 9:54,2,Alpha,P1004,Communications,4,Reconnaissance,Execution,Deliberate,Risk Assessment,79,57.8,5.1,7.4,0,1,1,0
+E0107,2/11/2026 16:52,3,Bravo,P1007,Operator,2,Convoy Security,Planning,Deliberate,Communication,65.6,44.7,4.3,2.9,2,0,0,0
+E0122,2/11/2026 9:20,3,Charlie,P1011,Operator,1,Area Defense,Execution,Deliberate,Communication,87.6,47.4,7.8,6.7,5,1,0,0
+E0042,2/9/2026 10:27,1,Echo,P1017,Team Lead,9,Humanitarian Assistance,Execution,Collaborative,Resource Allocation,85.2,38.8,8.2,6.4,5,0,0,0
+E0062,2/10/2026 8:54,2,Bravo,P1007,Operator,2,Joint Operations,Execution,Collaborative,Resource Allocation,67.9,34,7,4.3,6,0,0,0
+E0178,2/12/2026 6:45,4,Delta,P1014,Analyst,4,Joint Operations,Execution,Deliberate,Resource Allocation,87.2,48.8,8.1,6.4,0,0,0,0
+E0213,2/13/2026 20:51,5,Bravo,P1007,Operator,2,Convoy Security,Planning,Time-Critical,Pattern Recognition,94.2,31.6,8.3,7,7,1,0,0
+E0152,2/12/2026 8:34,4,Alpha,P1003,Operator,5,Convoy Security,Assessment,Deliberate,Risk Assessment,92.7,44.2,7.1,5,8,0,0,0
+E0038,2/9/2026 21:01,1,Delta,P1016,Communications,10,Reconnaissance,Execution,Deliberate,Situational Awareness,61.9,58,4.8,9.3,3,1,0,1
+E0133,2/11/2026 18:57,3,Delta,P1015,Operator,9,Convoy Security,Execution,Collaborative,Communication,91.3,30.8,9.3,7.6,7,0,0,0
+E0132,2/11/2026 15:49,3,Delta,P1014,Analyst,4,Joint Operations,Execution,Deliberate,Pattern Recognition,60.2,57.4,5.7,7.6,1,0,0,0
+E0090,2/10/2026 13:06,2,Echo,P1018,Analyst,4,Humanitarian Assistance,Execution,Collaborative,Pattern Recognition,87.4,37,7.8,6.1,5,0,0,0
+E0166,2/12/2026 17:48,4,Charlie,P1009,Team Lead,10,Convoy Security,Planning,Deliberate,Resource Allocation,100,41.5,8.9,6.6,7,0,0,1
+E0097,2/11/2026 17:01,3,Alpha,P1001,Team Lead,1,Crisis Response,Assessment,Deliberate,Communication,81.3,53.7,7.3,8.9,2,1,1,0
+E0111,2/11/2026 20:02,3,Bravo,P1008,Communications,11,Crisis Response,Planning,Deliberate,Risk Assessment,75.1,35,5.5,5.6,1,1,0,0
+E0160,2/12/2026 15:43,4,Bravo,P1008,Communications,11,Area Defense,Assessment,Collaborative,Pattern Recognition,90.8,34.3,7.2,7.6,8,1,0,0
+E0048,2/10/2026 20:21,2,Alpha,P1001,Team Lead,1,Humanitarian Assistance,Assessment,Deliberate,Resource Allocation,83.4,50,7.2,7.7,3,0,0,1
+E0170,2/12/2026 21:20,4,Charlie,P1010,Analyst,7,Humanitarian Assistance,Execution,Collaborative,Pattern Recognition,76.8,40.5,7.3,7.7,12,0,0,0
+E0093,2/10/2026 16:38,2,Echo,P1017,Team Lead,9,Joint Operations,Execution,Collaborative,Pattern Recognition,70.6,39.5,6.3,8.2,10,0,0,0
+E0114,2/11/2026 15:44,3,Bravo,P1007,Operator,2,Reconnaissance,Assessment,Time-Critical,Communication,67.6,31.9,5.1,9.1,8,0,0,0
+E0072,2/10/2026 9:15,2,Delta,P1013,Team Lead,4,Humanitarian Assistance,Planning,Deliberate,Situational Awareness,85.7,51.3,6.8,3.6,5,0,0,0
+E0008,2/9/2026 14:32,1,Alpha,P1003,Operator,5,Area Defense,Execution,Deliberate,Situational Awareness,85.3,48.9,5.9,9.1,7,0,0,0
+E0006,2/9/2026 18:23,1,Alpha,P1003,Operator,5,Joint Operations,Assessment,Deliberate,Communication,88.1,52.3,10,5.7,4,1,0,0
+E0242,2/13/2026 18:37,5,Echo,P1020,Communications,11,Area Defense,Execution,Deliberate,Risk Assessment,66,63.9,6.2,7,0,0,0,0
+E0051,2/10/2026 7:14,2,Alpha,P1004,Communications,4,Joint Operations,Assessment,Deliberate,Risk Assessment,77.6,57.7,6.7,4.7,4,0,0,0
+E0001,2/9/2026 6:48,1,Alpha,P1004,Communications,4,Reconnaissance,Planning,Collaborative,Risk Assessment,80.3,24.3,6.4,5.6,11,1,0,0
+E0073,2/10/2026 19:17,2,Delta,P1014,Analyst,4,Crisis Response,Execution,Time-Critical,Resource Allocation,68.7,25.2,3.4,10,5,0,0,0
+E0139,2/11/2026 19:32,3,Echo,P1018,Analyst,4,Joint Operations,Planning,Collaborative,Resource Allocation,72.2,45.5,8.4,8.2,1,1,0,0
+E0208,2/13/2026 18:04,5,Bravo,P1005,Team Lead,3,Convoy Security,Assessment,Collaborative,Pattern Recognition,93.3,29.6,7.6,5.9,7,0,0,0
+E0045,2/9/2026 13:25,1,Echo,P1020,Communications,11,Convoy Security,Execution,Time-Critical,Risk Assessment,60.4,18.7,4,8.5,1,0,0,0
+E0070,2/10/2026 17:05,2,Charlie,P1010,Analyst,7,Crisis Response,Assessment,Collaborative,Resource Allocation,95.6,31.7,7.8,4.8,7,0,0,0
+E0032,2/9/2026 20:03,1,Delta,P1013,Team Lead,4,Area Defense,Execution,Time-Critical,Communication,55.6,9.3,3.8,10,5,0,0,0
+E0200,2/13/2026 7:19,5,Alpha,P1002,Analyst,12,Reconnaissance,Planning,Time-Critical,Resource Allocation,85.3,14.7,5.8,6.7,4,1,1,0
+E0206,2/13/2026 13:34,5,Alpha,P1002,Analyst,12,Convoy Security,Planning,Deliberate,Situational Awareness,100,33.3,9.9,7.8,0,1,0,0
+E0011,2/9/2026 20:57,1,Alpha,P1003,Operator,5,Crisis Response,Execution,Collaborative,Risk Assessment,65.7,39.8,5.6,9.5,6,1,0,0
+E0212,2/13/2026 7:53,5,Bravo,P1008,Communications,11,Area Defense,Planning,Time-Critical,Situational Awareness,86.7,21.5,6.5,7,7,0,0,1
+E0188,2/12/2026 17:29,4,Echo,P1017,Team Lead,9,Joint Operations,Execution,Collaborative,Risk Assessment,80.2,42.7,6.4,10,8,0,0,0
+E0203,2/13/2026 21:23,5,Alpha,P1001,Team Lead,1,Convoy Security,Planning,Time-Critical,Situational Awareness,81.1,24.5,8.6,7,0,0,0,0
+E0245,2/13/2026 21:58,5,Echo,P1018,Analyst,4,Crisis Response,Execution,Collaborative,Pattern Recognition,85.9,31.5,7,9.2,6,1,0,0
+E0197,2/12/2026 10:24,4,Echo,P1017,Team Lead,9,Convoy Security,Assessment,Deliberate,Risk Assessment,95.8,35.8,7,6.8,5,0,1,1
+E0214,2/13/2026 11:22,5,Bravo,P1008,Communications,11,Convoy Security,Execution,Deliberate,Resource Allocation,91.6,46.7,8.3,7,10,1,0,0
+E0068,2/10/2026 15:50,2,Charlie,P1010,Analyst,7,Convoy Security,Assessment,Collaborative,Situational Awareness,91.3,22.8,8.1,5.8,7,0,0,0
+E0026,2/9/2026 9:56,1,Charlie,P1012,Communications,1,Joint Operations,Assessment,Deliberate,Situational Awareness,92.3,50.2,7.6,6.2,3,1,0,0
+E0153,2/12/2026 6:13,4,Alpha,P1002,Analyst,12,Area Defense,Execution,Deliberate,Risk Assessment,100,34.1,10,10,2,0,0,0
+E0140,2/11/2026 6:16,3,Echo,P1019,Operator,12,Humanitarian Assistance,Execution,Collaborative,Communication,78,29.6,5.2,7.6,9,0,0,0
+E0095,2/11/2026 15:16,3,Alpha,P1003,Operator,5,Joint Operations,Planning,Collaborative,Resource Allocation,78.2,25,8.2,4.5,6,1,0,0
+E0194,2/12/2026 10:58,4,Echo,P1018,Analyst,4,Humanitarian Assistance,Execution,Collaborative,Pattern Recognition,67.7,29.3,6.4,7.7,7,1,0,0
+E0233,2/13/2026 18:35,5,Delta,P1015,Operator,9,Crisis Response,Execution,Time-Critical,Situational Awareness,68.8,27.9,5.6,10,8,0,0,0
+E0066,2/10/2026 12:24,2,Charlie,P1012,Communications,1,Humanitarian Assistance,Assessment,Deliberate,Risk Assessment,77.1,53.9,6,4.8,6,0,0,1
+E0100,2/11/2026 20:49,3,Alpha,P1002,Analyst,12,Crisis Response,Execution,Collaborative,Resource Allocation,73.6,36.4,7.1,5.3,7,0,0,1
+E0109,2/11/2026 9:51,3,Bravo,P1007,Operator,2,Crisis Response,Planning,Deliberate,Risk Assessment,65,69.1,5.3,2.8,0,0,0,0
+E0018,2/9/2026 13:16,1,Bravo,P1007,Operator,2,Area Defense,Execution,Collaborative,Risk Assessment,61.8,32,6.1,7.4,10,0,0,0
+E0078,2/10/2026 9:31,2,Delta,P1013,Team Lead,4,Reconnaissance,Planning,Deliberate,Resource Allocation,51.1,60.5,3.2,6.2,2,1,1,0
+E0138,2/11/2026 9:21,3,Echo,P1018,Analyst,4,Reconnaissance,Assessment,Deliberate,Pattern Recognition,89.7,51,8.4,5.3,6,0,0,0
+E0230,2/13/2026 13:53,5,Delta,P1013,Team Lead,4,Reconnaissance,Execution,Deliberate,Risk Assessment,81.9,49.3,7.2,7.7,0,1,0,0
+E0013,2/9/2026 17:27,1,Alpha,P1004,Communications,4,Convoy Security,Planning,Time-Critical,Resource Allocation,52.5,35,5.7,8.2,3,0,0,1
+E0211,2/13/2026 17:25,5,Bravo,P1007,Operator,2,Convoy Security,Planning,Collaborative,Pattern Recognition,72.1,37.4,5.8,9.8,11,0,0,0
+E0201,2/13/2026 11:23,5,Alpha,P1003,Operator,5,Joint Operations,Assessment,Collaborative,Risk Assessment,99.9,40,8.1,8,8,0,0,1
+E0154,2/12/2026 17:19,4,Alpha,P1003,Operator,5,Reconnaissance,Execution,Deliberate,Communication,82.7,48.6,8.1,7.6,4,0,0,0
+E0185,2/12/2026 17:55,4,Delta,P1013,Team Lead,4,Convoy Security,Execution,Time-Critical,Pattern Recognition,67.8,12.8,5.9,10,5,1,0,0
+E0177,2/12/2026 11:35,4,Delta,P1013,Team Lead,4,Area Defense,Assessment,Collaborative,Pattern Recognition,92.8,40.8,8.4,5.3,6,0,0,1
+E0020,2/9/2026 10:16,1,Bravo,P1005,Team Lead,3,Joint Operations,Assessment,Deliberate,Situational Awareness,92.3,48.1,8,4.5,3,0,0,0
+E0061,2/10/2026 16:55,2,Bravo,P1006,Analyst,12,Convoy Security,Execution,Time-Critical,Communication,80.8,30.6,8.5,10,6,0,0,1
+E0228,2/13/2026 10:03,5,Delta,P1013,Team Lead,4,Joint Operations,Execution,Collaborative,Resource Allocation,79.8,30.6,7.5,6.9,12,0,0,1
+E0180,2/12/2026 16:07,4,Delta,P1015,Operator,9,Joint Operations,Assessment,Time-Critical,Pattern Recognition,63.4,24.9,5.8,7,5,0,0,0
+E0181,2/12/2026 11:35,4,Delta,P1016,Communications,10,Reconnaissance,Planning,Collaborative,Communication,86.5,39.8,7.9,7.6,4,0,0,0
+E0167,2/12/2026 16:55,4,Charlie,P1011,Operator,1,Convoy Security,Assessment,Collaborative,Communication,77.5,41.1,6.1,6.3,13,0,0,0
+E0241,2/13/2026 11:38,5,Echo,P1017,Team Lead,9,Convoy Security,Assessment,Deliberate,Pattern Recognition,94.2,39,6,3.7,3,0,0,0
+E0179,2/12/2026 14:42,4,Delta,P1015,Operator,9,Area Defense,Execution,Deliberate,Situational Awareness,89.8,38.8,6.6,6.6,1,0,0,0
+E0183,2/12/2026 11:49,4,Delta,P1013,Team Lead,4,Area Defense,Execution,Collaborative,Risk Assessment,61.5,45,5.3,6,9,0,0,0
+E0151,2/12/2026 13:19,4,Alpha,P1004,Communications,4,Joint Operations,Planning,Deliberate,Pattern Recognition,88.3,43.4,7,5.8,1,0,0,0
+E0187,2/12/2026 13:09,4,Echo,P1019,Operator,12,Area Defense,Assessment,Collaborative,Pattern Recognition,76,22.6,6.4,3.9,4,0,0,0
+E0120,2/11/2026 14:41,3,Charlie,P1009,Team Lead,10,Convoy Security,Planning,Collaborative,Communication,80.8,38.3,8,5.6,7,0,0,0
+E0113,2/11/2026 10:33,3,Bravo,P1007,Operator,2,Reconnaissance,Execution,Time-Critical,Communication,58.1,30.7,4.4,10,6,0,0,1
+E0227,2/13/2026 19:10,5,Charlie,P1009,Team Lead,10,Crisis Response,Execution,Time-Critical,Communication,87.6,22.6,8.3,9.6,0,0,0,0
+E0226,2/13/2026 18:10,5,Charlie,P1011,Operator,1,Convoy Security,Planning,Deliberate,Pattern Recognition,94.8,43,6.6,6.6,3,0,0,0
+E0128,2/11/2026 9:26,3,Delta,P1015,Operator,9,Convoy Security,Execution,Deliberate,Risk Assessment,85.1,35.9,6.2,7,0,1,0,0
+E0141,2/11/2026 17:39,3,Echo,P1019,Operator,12,Convoy Security,Assessment,Collaborative,Risk Assessment,80.2,55.7,5.6,6.3,11,0,0,0
+E0007,2/9/2026 20:33,1,Alpha,P1004,Communications,4,Convoy Security,Assessment,Deliberate,Resource Allocation,74.2,63,7.6,5.8,9,0,0,0
+E0215,2/13/2026 7:05,5,Bravo,P1007,Operator,2,Reconnaissance,Execution,Collaborative,Resource Allocation,83.7,39.2,7.6,9.5,4,0,0,0
+E0069,2/10/2026 14:53,2,Charlie,P1010,Analyst,7,Humanitarian Assistance,Assessment,Collaborative,Communication,91.5,47.8,10,4.7,6,0,0,1
+E0147,2/12/2026 20:22,4,Alpha,P1004,Communications,4,Reconnaissance,Assessment,Time-Critical,Pattern Recognition,75.5,26.7,7.5,6.5,8,0,0,0
+E0033,2/9/2026 19:53,1,Delta,P1015,Operator,9,Joint Operations,Execution,Collaborative,Communication,70.9,33.9,7,10,3,0,0,0
+E0082,2/10/2026 9:36,2,Echo,P1017,Team Lead,9,Joint Operations,Execution,Deliberate,Risk Assessment,90.3,41.4,7.5,5,5,0,0,1
+E0130,2/11/2026 19:32,3,Delta,P1015,Operator,9,Area Defense,Execution,Deliberate,Pattern Recognition,69.3,57.7,3.6,9.7,0,1,1,0
+E0155,2/12/2026 13:47,4,Bravo,P1007,Operator,2,Reconnaissance,Execution,Time-Critical,Communication,73.7,27.7,7.3,8.6,3,0,0,0
+E0102,2/11/2026 7:25,3,Alpha,P1002,Analyst,12,Humanitarian Assistance,Execution,Time-Critical,Resource Allocation,92.9,13.4,7.7,9.8,4,1,0,0
+E0084,2/10/2026 8:47,2,Echo,P1020,Communications,11,Area Defense,Planning,Collaborative,Situational Awareness,68.9,31.7,5.6,4.5,9,0,0,0
+E0131,2/11/2026 16:11,3,Delta,P1015,Operator,9,Reconnaissance,Assessment,Collaborative,Resource Allocation,59.5,44.6,3.5,5.5,11,0,0,0
+E0238,2/13/2026 11:12,5,Echo,P1020,Communications,11,Joint Operations,Planning,Collaborative,Situational Awareness,82.8,39,6.4,5.8,8,1,0,0
+E0016,2/9/2026 7:37,1,Bravo,P1008,Communications,11,Area Defense,Planning,Deliberate,Pattern Recognition,74,52.7,5.8,5,5,0,0,0
+E0022,2/9/2026 7:53,1,Bravo,P1005,Team Lead,3,Convoy Security,Planning,Collaborative,Pattern Recognition,69.3,32.3,6.7,4.8,8,0,0,0
+E0065,2/10/2026 14:29,2,Charlie,P1012,Communications,1,Area Defense,Assessment,Time-Critical,Resource Allocation,69.7,24.6,6.5,4.9,3,0,0,0
+E0222,2/13/2026 10:11,5,Charlie,P1010,Analyst,7,Humanitarian Assistance,Execution,Collaborative,Risk Assessment,83.7,32.3,4.6,8.5,7,0,0,1
+E0127,2/11/2026 16:59,3,Delta,P1016,Communications,10,Joint Operations,Planning,Collaborative,Pattern Recognition,67.9,36.5,7.3,5.9,7,0,0,0
+E0124,2/11/2026 15:31,3,Charlie,P1010,Analyst,7,Humanitarian Assistance,Assessment,Time-Critical,Situational Awareness,79.3,9.1,5.5,6.9,2,1,1,1
+E0028,2/9/2026 16:42,1,Charlie,P1011,Operator,1,Convoy Security,Execution,Collaborative,Risk Assessment,71.5,45.9,4.7,7.7,10,0,0,0
+E0143,2/11/2026 9:43,3,Echo,P1018,Analyst,4,Humanitarian Assistance,Planning,Collaborative,Resource Allocation,82.5,45.4,7.9,6.1,9,0,0,1
+E0094,2/10/2026 11:23,2,Echo,P1018,Analyst,4,Reconnaissance,Assessment,Deliberate,Communication,74.7,48.1,6.8,4.6,5,0,0,0
+E0029,2/9/2026 11:39,1,Charlie,P1010,Analyst,7,Reconnaissance,Planning,Collaborative,Resource Allocation,81.6,32.1,7.2,4.6,9,0,0,0
+E0030,2/9/2026 8:18,1,Charlie,P1010,Analyst,7,Reconnaissance,Assessment,Collaborative,Pattern Recognition,97.2,19.6,8,4.1,13,0,0,0
+E0003,2/9/2026 13:55,1,Alpha,P1001,Team Lead,1,Area Defense,Assessment,Deliberate,Situational Awareness,86.8,51.4,6.6,4.8,3,0,0,0
+E0236,2/13/2026 14:53,5,Echo,P1019,Operator,12,Humanitarian Assistance,Planning,Deliberate,Risk Assessment,99.1,30,8.3,7.8,7,1,0,0
+E0243,2/13/2026 16:17,5,Echo,P1019,Operator,12,Convoy Security,Assessment,Deliberate,Situational Awareness,75,40.2,6.1,7.9,6,1,0,0
+E0156,2/12/2026 14:48,4,Bravo,P1008,Communications,11,Crisis Response,Assessment,Collaborative,Risk Assessment,84.6,43.7,4.7,4.9,5,0,0,0
+E0092,2/10/2026 15:04,2,Echo,P1020,Communications,11,Convoy Security,Execution,Time-Critical,Risk Assessment,50.7,13.3,2.1,10,6,0,0,0
+E0244,2/13/2026 6:41,5,Echo,P1020,Communications,11,Humanitarian Assistance,Assessment,Collaborative,Pattern Recognition,79.3,29.5,6.6,6,6,0,0,0
+E0198,2/13/2026 15:40,5,Alpha,P1002,Analyst,12,Convoy Security,Planning,Deliberate,Communication,78.8,47.7,4.9,4.8,5,0,0,0
+E0035,2/9/2026 20:26,1,Delta,P1014,Analyst,4,Reconnaissance,Planning,Deliberate,Risk Assessment,89.3,52.3,6.1,7.7,5,0,0,0
+E0171,2/12/2026 9:59,4,Charlie,P1011,Operator,1,Humanitarian Assistance,Execution,Deliberate,Risk Assessment,74.7,48.4,4.8,6.8,0,0,0,0
+E0087,2/10/2026 11:08,2,Echo,P1017,Team Lead,9,Reconnaissance,Planning,Collaborative,Resource Allocation,71.8,47,4.1,5.5,8,0,1,1
+E0135,2/11/2026 21:06,3,Echo,P1018,Analyst,4,Convoy Security,Planning,Deliberate,Risk Assessment,76.9,47.8,9.1,5.8,6,0,0,0
+E0134,2/11/2026 14:59,3,Delta,P1015,Operator,9,Reconnaissance,Assessment,Time-Critical,Pattern Recognition,76.9,16.3,6.1,8.8,7,1,0,0
+E0117,2/11/2026 16:41,3,Charlie,P1012,Communications,1,Joint Operations,Execution,Time-Critical,Pattern Recognition,71.8,27.1,5.5,9.4,6,0,0,1
+E0075,2/10/2026 12:37,2,Delta,P1014,Analyst,4,Area Defense,Assessment,Time-Critical,Communication,68.4,39.5,5.4,7.7,4,0,0,1
+E0204,2/13/2026 17:07,5,Alpha,P1004,Communications,4,Humanitarian Assistance,Assessment,Deliberate,Situational Awareness,83.3,31.8,6.9,7,9,0,0,1
+E0012,2/9/2026 13:17,1,Alpha,P1002,Analyst,12,Convoy Security,Planning,Deliberate,Situational Awareness,82.1,46.8,6.2,7.6,9,0,0,0
+E0017,2/9/2026 8:43,1,Bravo,P1005,Team Lead,3,Convoy Security,Assessment,Time-Critical,Situational Awareness,73.5,16.6,7.3,6.1,3,1,0,0
+E0043,2/9/2026 20:15,1,Echo,P1019,Operator,12,Area Defense,Execution,Time-Critical,Risk Assessment,63.3,14.2,4.8,9,1,0,0,0
+E0229,2/13/2026 9:19,5,Delta,P1014,Analyst,4,Humanitarian Assistance,Assessment,Time-Critical,Resource Allocation,87.1,11.5,7.9,6.2,2,0,0,0
+E0209,2/13/2026 20:17,5,Bravo,P1008,Communications,11,Crisis Response,Assessment,Deliberate,Risk Assessment,92.7,64.1,8.9,8,5,0,0,1
+E0165,2/12/2026 8:49,4,Charlie,P1010,Analyst,7,Joint Operations,Assessment,Collaborative,Resource Allocation,81.5,25.8,6.7,4.7,11,0,0,0
+E0027,2/9/2026 18:57,1,Charlie,P1011,Operator,1,Joint Operations,Execution,Collaborative,Situational Awareness,70.2,36.1,5.8,8.1,11,0,0,0
+E0173,2/12/2026 7:50,4,Charlie,P1012,Communications,1,Joint Operations,Assessment,Collaborative,Resource Allocation,90.8,30.3,8.1,3.6,9,0,0,0
+E0080,2/10/2026 19:46,2,Delta,P1014,Analyst,4,Humanitarian Assistance,Execution,Deliberate,Resource Allocation,50.7,69.7,4.8,7.7,1,1,0,1
+E0089,2/10/2026 19:37,2,Echo,P1019,Operator,12,Reconnaissance,Planning,Time-Critical,Pattern Recognition,65.5,26.1,6.6,6.4,5,1,0,0
+E0232,2/13/2026 12:51,5,Delta,P1014,Analyst,4,Reconnaissance,Planning,Time-Critical,Pattern Recognition,95.9,19.6,8.3,8.7,6,1,0,0
+E0064,2/10/2026 13:33,2,Charlie,P1011,Operator,1,Humanitarian Assistance,Execution,Deliberate,Pattern Recognition,80.1,40.1,7.5,8,6,0,0,0
+E0164,2/12/2026 18:49,4,Charlie,P1010,Analyst,7,Humanitarian Assistance,Planning,Collaborative,Communication,87,28.7,8.5,6.5,5,0,0,0
+E0005,2/9/2026 12:58,1,Alpha,P1001,Team Lead,1,Reconnaissance,Execution,Deliberate,Situational Awareness,93.2,39.1,7.2,9.2,0,0,0,0
+E0049,2/10/2026 8:15,2,Alpha,P1001,Team Lead,1,Area Defense,Planning,Collaborative,Risk Assessment,92.4,41.5,6.3,3.9,9,0,0,0
+E0205,2/13/2026 20:00,5,Alpha,P1004,Communications,4,Humanitarian Assistance,Execution,Deliberate,Situational Awareness,79.8,55.4,7,6.5,4,0,0,0
+E0083,2/10/2026 6:38,2,Echo,P1019,Operator,12,Area Defense,Assessment,Deliberate,Communication,96.2,37.1,7.9,5.8,3,0,1,0
+E0004,2/9/2026 20:24,1,Alpha,P1002,Analyst,12,Crisis Response,Assessment,Time-Critical,Pattern Recognition,76.3,20,8.6,7.6,2,0,0,1
+E0225,2/13/2026 18:06,5,Charlie,P1012,Communications,1,Reconnaissance,Execution,Deliberate,Communication,86.3,35.3,5.7,7.2,5,0,1,1
+E0199,2/13/2026 10:34,5,Alpha,P1001,Team Lead,1,Convoy Security,Execution,Collaborative,Pattern Recognition,84.5,44.1,7.2,5.7,6,0,0,0
+E0137,2/11/2026 15:56,3,Echo,P1018,Analyst,4,Reconnaissance,Planning,Deliberate,Pattern Recognition,88,48.6,5.5,4.2,2,0,0,0
+E0010,2/9/2026 21:35,1,Alpha,P1004,Communications,4,Joint Operations,Planning,Time-Critical,Pattern Recognition,67.6,28.8,6.7,5.6,0,0,0,0
+E0182,2/12/2026 19:43,4,Delta,P1016,Communications,10,Joint Operations,Assessment,Collaborative,Resource Allocation,62,28.8,5.2,5.6,9,0,0,0
+E0099,2/11/2026 17:43,3,Alpha,P1002,Analyst,12,Reconnaissance,Assessment,Time-Critical,Resource Allocation,73.1,5,4.8,6.3,4,0,0,0
+E0123,2/11/2026 16:12,3,Charlie,P1012,Communications,1,Area Defense,Planning,Deliberate,Communication,81.4,40.4,5.6,5.9,4,0,0,0
+E0169,2/12/2026 9:08,4,Charlie,P1012,Communications,1,Joint Operations,Assessment,Time-Critical,Resource Allocation,69.2,41.9,5.1,8.3,5,0,0,0
+E0104,2/11/2026 9:03,3,Bravo,P1008,Communications,11,Humanitarian Assistance,Planning,Time-Critical,Risk Assessment,70.1,24.2,7.3,6.5,3,0,0,0
+E0110,2/11/2026 19:38,3,Bravo,P1007,Operator,2,Crisis Response,Planning,Deliberate,Situational Awareness,94.2,49.5,7.8,6.1,5,0,0,0
+E0192,2/12/2026 13:33,4,Echo,P1017,Team Lead,9,Reconnaissance,Planning,Time-Critical,Pattern Recognition,91.6,19,7.5,6.5,0,0,0,1
+E0112,2/11/2026 7:08,3,Bravo,P1006,Analyst,12,Area Defense,Planning,Collaborative,Resource Allocation,70.1,51.6,6.6,4.3,10,0,0,0
+E0158,2/12/2026 21:42,4,Bravo,P1008,Communications,11,Convoy Security,Execution,Collaborative,Communication,85.9,33.3,7.2,8.3,8,0,0,0
+E0034,2/9/2026 8:45,1,Delta,P1016,Communications,10,Area Defense,Assessment,Deliberate,Resource Allocation,74.6,51.2,7,4.6,7,1,0,0
+E0235,2/13/2026 11:17,5,Delta,P1016,Communications,10,Joint Operations,Assessment,Deliberate,Situational Awareness,78,57.6,6.1,4.4,0,0,1,0
+E0126,2/11/2026 17:48,3,Delta,P1014,Analyst,4,Reconnaissance,Planning,Deliberate,Risk Assessment,82.7,56,8,5.8,4,1,0,0
+E0041,2/9/2026 9:50,1,Echo,P1017,Team Lead,9,Humanitarian Assistance,Assessment,Collaborative,Communication,97.3,29.4,7.5,6.3,6,0,0,0
+E0148,2/12/2026 7:28,4,Alpha,P1002,Analyst,12,Convoy Security,Planning,Time-Critical,Communication,87.5,10.1,6.4,8.5,5,0,0,0
+E0044,2/9/2026 6:33,1,Echo,P1019,Operator,12,Crisis Response,Assessment,Deliberate,Communication,81.3,53.1,6.6,4.7,1,0,0,0
+E0054,2/10/2026 11:30,2,Alpha,P1001,Team Lead,1,Humanitarian Assistance,Assessment,Collaborative,Situational Awareness,83.5,26.4,6.8,4.8,18,0,0,0
+E0071,2/10/2026 6:39,2,Charlie,P1011,Operator,1,Crisis Response,Planning,Time-Critical,Resource Allocation,80.6,14.7,7.3,6.1,9,0,0,0
+E0116,2/11/2026 17:29,3,Charlie,P1010,Analyst,7,Reconnaissance,Planning,Time-Critical,Risk Assessment,74.8,25.9,5,7.2,3,0,0,0
+E0002,2/9/2026 9:59,1,Alpha,P1003,Operator,5,Crisis Response,Planning,Deliberate,Communication,78.8,43.6,7.4,6.1,0,0,0,0
+E0015,2/9/2026 21:30,1,Bravo,P1005,Team Lead,3,Area Defense,Planning,Time-Critical,Resource Allocation,66.8,31.9,6.5,8.4,6,0,0,0
+E0216,2/13/2026 16:24,5,Bravo,P1007,Operator,2,Joint Operations,Execution,Deliberate,Risk Assessment,83.1,48.9,7.2,7.8,4,0,0,0
+E0193,2/12/2026 9:20,4,Echo,P1017,Team Lead,9,Reconnaissance,Planning,Time-Critical,Situational Awareness,74.5,27.6,4.9,8.3,7,0,0,0
+E0046,2/9/2026 12:20,1,Echo,P1019,Operator,12,Humanitarian Assistance,Execution,Time-Critical,Situational Awareness,63.6,31.8,6.1,9.2,2,1,0,0
+E0162,2/12/2026 7:11,4,Bravo,P1008,Communications,11,Convoy Security,Execution,Time-Critical,Risk Assessment,69.1,29.8,5.4,10,3,0,0,0
+E0237,2/13/2026 8:12,5,Echo,P1019,Operator,12,Crisis Response,Execution,Deliberate,Communication,65.9,62.7,4.5,8,1,1,0,1
+E0125,2/11/2026 7:36,3,Delta,P1015,Operator,9,Humanitarian Assistance,Execution,Time-Critical,Resource Allocation,54.7,23.3,4.3,9.8,0,0,0,0
+E0021,2/9/2026 8:40,1,Bravo,P1007,Operator,2,Reconnaissance,Assessment,Deliberate,Situational Awareness,64.3,60,7.1,5.2,2,0,0,0
+E0240,2/13/2026 11:54,5,Echo,P1017,Team Lead,9,Convoy Security,Execution,Deliberate,Situational Awareness,83.8,30.2,5.8,8.6,1,0,0,0
+E0184,2/12/2026 19:06,4,Delta,P1013,Team Lead,4,Reconnaissance,Assessment,Collaborative,Pattern Recognition,86.3,33.1,5.7,6.3,14,1,0,0
+E0081,2/10/2026 10:35,2,Echo,P1017,Team Lead,9,Reconnaissance,Planning,Time-Critical,Risk Assessment,96.3,26,6.6,6.2,0,0,0,0
+E0037,2/9/2026 18:37,1,Delta,P1016,Communications,10,Joint Operations,Planning,Collaborative,Situational Awareness,61.2,40.9,4.8,5.7,7,0,0,0
+E0118,2/11/2026 11:10,3,Charlie,P1009,Team Lead,10,Joint Operations,Planning,Time-Critical,Risk Assessment,77,16.6,7.8,5.4,10,0,0,0
+E0146,2/12/2026 18:33,4,Alpha,P1002,Analyst,12,Humanitarian Assistance,Assessment,Time-Critical,Pattern Recognition,75.7,37.8,8.3,8.7,0,0,0,0
+E0105,2/11/2026 6:39,3,Bravo,P1006,Analyst,12,Area Defense,Assessment,Deliberate,Resource Allocation,78.2,59.5,7.1,6.6,1,0,0,0
+E0088,2/10/2026 18:45,2,Echo,P1017,Team Lead,9,Joint Operations,Execution,Deliberate,Communication,74.9,48.3,5.6,5.6,8,1,0,0
+E0052,2/10/2026 10:58,2,Alpha,P1002,Analyst,12,Convoy Security,Execution,Collaborative,Pattern Recognition,85.5,33.9,7.7,9.4,10,0,0,0
+E0036,2/9/2026 13:31,1,Delta,P1015,Operator,9,Reconnaissance,Execution,Deliberate,Communication,63.8,58.8,6.4,8.8,4,0,0,0
+E0039,2/9/2026 10:15,1,Delta,P1013,Team Lead,4,Area Defense,Planning,Time-Critical,Communication,75.5,30.9,5.6,6.6,2,1,0,0
+E0217,2/13/2026 11:06,5,Bravo,P1008,Communications,11,Humanitarian Assistance,Assessment,Collaborative,Pattern Recognition,89.8,39,5.8,5.1,8,0,0,0
+E0106,2/11/2026 17:16,3,Bravo,P1005,Team Lead,3,Reconnaissance,Execution,Time-Critical,Resource Allocation,66.2,24,4.6,10,5,0,0,0
+E0077,2/10/2026 17:32,2,Delta,P1013,Team Lead,4,Convoy Security,Assessment,Deliberate,Resource Allocation,63,52.7,5.5,7.7,3,0,0,0
+E0136,2/11/2026 8:41,3,Echo,P1019,Operator,12,Humanitarian Assistance,Execution,Collaborative,Situational Awareness,85.4,25.5,6.6,6.7,1,0,0,0
+E0098,2/11/2026 7:42,3,Alpha,P1001,Team Lead,1,Joint Operations,Assessment,Collaborative,Communication,84.7,27.5,8.5,5.9,10,1,0,0
+E0239,2/13/2026 6:15,5,Echo,P1019,Operator,12,Joint Operations,Execution,Deliberate,Situational Awareness,76.6,59.5,7.3,9.2,2,1,0,0
+E0219,2/13/2026 7:05,5,Charlie,P1012,Communications,1,Humanitarian Assistance,Assessment,Time-Critical,Resource Allocation,85.9,24.3,8.3,6.8,2,0,0,0
+E0129,2/11/2026 11:33,3,Delta,P1014,Analyst,4,Convoy Security,Assessment,Collaborative,Resource Allocation,64.2,32.7,5.7,4.9,8,0,0,1
+E0050,2/10/2026 9:48,2,Alpha,P1004,Communications,4,Joint Operations,Execution,Collaborative,Situational Awareness,81.2,37.1,7.4,6.9,7,1,0,1
+E0220,2/13/2026 10:49,5,Charlie,P1011,Operator,1,Convoy Security,Planning,Time-Critical,Communication,87.6,27.7,8.1,6.6,5,0,0,0
+E0019,2/9/2026 14:08,1,Bravo,P1005,Team Lead,3,Joint Operations,Planning,Time-Critical,Communication,85.2,13.9,7.8,6.5,7,0,0,0
+E0159,2/12/2026 11:06,4,Bravo,P1005,Team Lead,3,Crisis Response,Assessment,Collaborative,Resource Allocation,96.7,26.2,8.1,7.2,8,0,0,0
+E0149,2/12/2026 16:36,4,Alpha,P1001,Team Lead,1,Joint Operations,Planning,Deliberate,Pattern Recognition,80.5,43.3,6.3,6.9,7,1,0,1
+E0223,2/13/2026 9:59,5,Charlie,P1011,Operator,1,Area Defense,Assessment,Collaborative,Communication,81.3,35.8,7.6,5.8,6,0,0,0
+E0163,2/12/2026 18:43,4,Bravo,P1005,Team Lead,3,Area Defense,Execution,Collaborative,Pattern Recognition,87.3,29.5,7.3,7.5,13,0,0,1
+E0014,2/9/2026 11:17,1,Bravo,P1006,Analyst,12,Reconnaissance,Assessment,Time-Critical,Resource Allocation,64.9,8.5,5.9,8.9,6,0,0,0
+E0121,2/11/2026 15:29,3,Charlie,P1011,Operator,1,Area Defense,Execution,Collaborative,Resource Allocation,77,38.1,5.3,8.4,9,0,0,0
+E0031,2/9/2026 8:29,1,Delta,P1014,Analyst,4,Convoy Security,Planning,Time-Critical,Resource Allocation,46.9,33.3,4.4,8.4,2,0,1,0
+E0218,2/13/2026 16:51,5,Bravo,P1008,Communications,11,Area Defense,Execution,Time-Critical,Pattern Recognition,60.4,24.6,4.1,7.9,1,0,0,1
+E0119,2/11/2026 8:32,3,Charlie,P1011,Operator,1,Crisis Response,Planning,Deliberate,Communication,79.9,42.1,6.1,4.8,0,0,0,1
+E0076,2/10/2026 10:00,2,Delta,P1015,Operator,9,Convoy Security,Planning,Collaborative,Situational Awareness,70.8,29.9,7.3,5.2,8,0,0,0
+E0150,2/12/2026 21:03,4,Alpha,P1002,Analyst,12,Crisis Response,Assessment,Deliberate,Communication,99.6,60.9,7.9,5.5,0,0,0,1
+E0067,2/10/2026 21:53,2,Charlie,P1012,Communications,1,Convoy Security,Execution,Collaborative,Situational Awareness,74.9,33.8,6.7,6.9,5,0,0,0
+E0096,2/11/2026 15:35,3,Alpha,P1004,Communications,4,Joint Operations,Planning,Collaborative,Situational Awareness,86.8,23.8,8.5,6.6,4,0,0,0
+E0085,2/10/2026 7:43,2,Echo,P1017,Team Lead,9,Area Defense,Planning,Time-Critical,Communication,84.6,25,5.8,7.4,2,0,0,0
+E0202,2/13/2026 7:31,5,Alpha,P1001,Team Lead,1,Reconnaissance,Execution,Collaborative,Risk Assessment,88.3,36.6,6.9,8.2,12,0,0,0
+E0108,2/11/2026 7:20,3,Bravo,P1005,Team Lead,3,Area Defense,Execution,Time-Critical,Pattern Recognition,71.1,32,5.4,10,4,1,0,0
+E0079,2/10/2026 20:32,2,Delta,P1015,Operator,9,Joint Operations,Execution,Collaborative,Risk Assessment,59.3,40,4.4,6.2,5,0,0,0
+E0224,2/13/2026 13:44,5,Charlie,P1011,Operator,1,Convoy Security,Execution,Deliberate,Pattern Recognition,92.4,50.8,8,7.7,4,0,0,0
+E0191,2/12/2026 14:05,4,Echo,P1019,Operator,12,Humanitarian Assistance,Planning,Time-Critical,Risk Assessment,60.2,37.6,5.5,8.3,2,1,0,0
+E0058,2/10/2026 15:32,2,Bravo,P1008,Communications,11,Crisis Response,Planning,Time-Critical,Resource Allocation,61.5,22.6,4.1,6.1,4,0,0,0
+E0091,2/10/2026 16:55,2,Echo,P1020,Communications,11,Joint Operations,Execution,Collaborative,Resource Allocation,76.9,35.7,5.4,8.5,4,0,0,1
+E0057,2/10/2026 9:01,2,Bravo,P1006,Analyst,12,Reconnaissance,Execution,Collaborative,Resource Allocation,87.6,31.9,7.3,8,4,1,0,0
+E0023,2/9/2026 17:49,1,Charlie,P1011,Operator,1,Crisis Response,Planning,Time-Critical,Situational Awareness,61.2,19,6.7,7.3,6,1,0,0
+E0168,2/12/2026 14:31,4,Charlie,P1012,Communications,1,Area Defense,Planning,Deliberate,Risk Assessment,76.2,54.9,6.8,5.6,6,0,0,0
+E0086,2/10/2026 13:25,2,Echo,P1020,Communications,11,Crisis Response,Assessment,Deliberate,Situational Awareness,80.2,53,6.7,6.5,11,0,0,0
+E0231,2/13/2026 19:34,5,Delta,P1014,Analyst,4,Convoy Security,Assessment,Deliberate,Communication,80.7,32.8,6.1,5.9,3,0,1,0
+E0175,2/12/2026 10:22,4,Delta,P1015,Operator,9,Reconnaissance,Execution,Collaborative,Communication,92.1,32.2,7,10,13,0,0,0
+E0047,2/9/2026 17:11,1,Echo,P1019,Operator,12,Area Defense,Planning,Deliberate,Pattern Recognition,74.5,64.6,6.4,6.4,6,0,0,0
+E0234,2/13/2026 9:59,5,Delta,P1016,Communications,10,Area Defense,Planning,Collaborative,Communication,75.1,48.4,7.3,5.8,2,0,0,0
+E0196,2/12/2026 18:18,4,Echo,P1018,Analyst,4,Joint Operations,Assessment,Collaborative,Pattern Recognition,99.6,21.6,6.9,6.4,6,0,0,0
+E0144,2/12/2026 6:47,4,Alpha,P1003,Operator,5,Convoy Security,Assessment,Deliberate,Risk Assessment,80.7,50.7,7.1,3.3,6,0,0,0
+E0207,2/13/2026 19:31,5,Alpha,P1003,Operator,5,Area Defense,Planning,Collaborative,Pattern Recognition,100,24.8,8.8,7.1,10,0,0,0
+E0186,2/12/2026 14:54,4,Echo,P1018,Analyst,4,Crisis Response,Execution,Deliberate,Risk Assessment,84.6,31.4,6.9,8.1,3,0,0,1`;
+
+    const ROSTER_CSV = String.raw`participant_id,team,role,experience_years
+P1001,Alpha,Team Lead,1
+P1002,Alpha,Analyst,12
+P1003,Alpha,Operator,5
+P1004,Alpha,Communications,4
+P1005,Bravo,Team Lead,3
+P1006,Bravo,Analyst,12
+P1007,Bravo,Operator,2
+P1008,Bravo,Communications,11
+P1009,Charlie,Team Lead,10
+P1010,Charlie,Analyst,7
+P1011,Charlie,Operator,1
+P1012,Charlie,Communications,1
+P1013,Delta,Team Lead,4
+P1014,Delta,Analyst,4
+P1015,Delta,Operator,9
+P1016,Delta,Communications,10
+P1017,Echo,Team Lead,9
+P1018,Echo,Analyst,4
+P1019,Echo,Operator,12
+P1020,Echo,Communications,11`;
+
+    /* =========================
+       STATE
+    ========================= */
+
+    const RAW_FIELDS = [
+      "event_id",
+      "timestamp",
+      "exercise_day",
+      "team",
+      "participant_id",
+      "role",
+      "experience_years",
+      "scenario",
+      "phase",
+      "decision_type",
+      "cognitive_domain",
+      "accuracy_score",
+      "response_time_sec",
+      "confidence_rating",
+      "stress_level",
+      "communication_events",
+      "information_overload_flag",
+      "communication_breakdown_flag",
+      "fixation_error_flag"
+    ];
+
+    const TEAM_ORDER = ["Alpha", "Bravo", "Charlie", "Delta", "Echo"];
+    const TEAM_COLORS = {
+      Alpha: "#00d4ff",
+      Bravo: "#f59e0b",
+      Charlie: "#a78bfa",
+      Delta: "#10b981",
+      Echo: "#f87171"
+    };
+    const DAY_ORDER = [1, 2, 3, 4, 5];
+    const SCENARIO_ORDER = [
+      "Crisis Response",
+      "Humanitarian Assistance",
+      "Area Defense",
+      "Convoy Security",
+      "Joint Operations",
+      "Reconnaissance"
+    ];
+    const PHASE_ORDER = ["Planning", "Assessment", "Execution"];
+    const DECISION_ORDER = ["Deliberate", "Time-Critical", "Collaborative"];
+    const DOMAIN_ORDER = [
+      "Risk Assessment",
+      "Situational Awareness",
+      "Resource Allocation",
+      "Pattern Recognition",
+      "Communication"
+    ];
+    const DECISION_SHAPES = {
+      Deliberate: d3.symbolCircle,
+      "Time-Critical": d3.symbolTriangle,
+      Collaborative: d3.symbolSquare
+    };
+    const QUICK_INSIGHTS = [
+      "Which team showed the most improvement over 5 days?",
+      "Where were error rates highest and why might that be?",
+      "How does decision type affect accuracy under stress?",
+      "What are the top 3 recommendations for the after-action review?"
+    ];
+    const ERROR_SEGMENTS = [
+      { key: "clean_events", label: "Clean Event", color: "rgba(148,163,184,0.28)" },
+      { key: "information_overload_flag", label: "Information Overload", color: "#f59e0b" },
+      { key: "communication_breakdown_flag", label: "Communication Breakdown", color: "#ef4444" },
+      { key: "fixation_error_flag", label: "Fixation Error", color: "#a78bfa" }
+    ];
+
+    const timeParser = d3.timeParse("%m/%d/%Y %H:%M");
+
+    const exerciseData = d3.csvParse(EXERCISE_CSV, parseEventRow);
+    const rosterData = d3.csvParse(ROSTER_CSV, parseRosterRow);
+    const rosterByTeam = d3.rollup(rosterData, (rows) => rows.length, (d) => d.team);
+    const globalStats = computeGlobalStats(exerciseData);
+
+    const appState = {
+      filters: createDefaultFilters(),
+      highlightTeam: null,
+      errorMode: "exercise_day",
+      drawer: {
+        open: false,
+        title: "",
+        rows: [],
+        sortKey: "timestamp",
+        sortDirection: "desc"
+      },
+      aiHistory: [],
+      loadingInsight: false,
+      liveInsight: "",
+      liveQuestion: "",
+      toastTimer: null
+    };
+
+    /* =========================
+       UTILS
+    ========================= */
+
+    /**
+     * Parse one performance event row into a typed object.
+     * @param {Record<string, string>} d
+     * @returns {object}
+     */
+    function parseEventRow(d) {
+      const parsed = {
+        ...d,
+        timestamp_date: timeParser(d.timestamp),
+        exercise_day: Number(d.exercise_day),
+        experience_years: Number(d.experience_years),
+        accuracy_score: Number(d.accuracy_score),
+        response_time_sec: Number(d.response_time_sec),
+        confidence_rating: Number(d.confidence_rating),
+        stress_level: Number(d.stress_level),
+        communication_events: Number(d.communication_events),
+        information_overload_flag: Number(d.information_overload_flag),
+        communication_breakdown_flag: Number(d.communication_breakdown_flag),
+        fixation_error_flag: Number(d.fixation_error_flag)
+      };
+
+      parsed.any_flag = Number(
+        parsed.information_overload_flag ||
+        parsed.communication_breakdown_flag ||
+        parsed.fixation_error_flag
+      );
+
+      return parsed;
+    }
+
+    /**
+     * Parse one roster row into a typed object.
+     * @param {Record<string, string>} d
+     * @returns {object}
+     */
+    function parseRosterRow(d) {
+      return {
+        ...d,
+        experience_years: Number(d.experience_years)
+      };
+    }
+
+    /**
+     * Create the default filter state with all options selected.
+     * @returns {object}
+     */
+    function createDefaultFilters() {
+      return {
+        team: new Set(TEAM_ORDER),
+        exercise_day: new Set(DAY_ORDER),
+        scenario: new Set(SCENARIO_ORDER),
+        phase: new Set(PHASE_ORDER),
+        decision_type: new Set(DECISION_ORDER)
+      };
+    }
+
+    /**
+     * Compute global metric baselines and extents for normalization.
+     * @param {object[]} data
+     * @returns {object}
+     */
+    function computeGlobalStats(data) {
+      return {
+        means: {
+          accuracy_score: d3.mean(data, (d) => d.accuracy_score) ?? 0,
+          response_time_sec: d3.mean(data, (d) => d.response_time_sec) ?? 0,
+          stress_level: d3.mean(data, (d) => d.stress_level) ?? 0,
+          error_rate: calcAnyFlagRate(data)
+        },
+        extents: {
+          accuracy_score: d3.extent(data, (d) => d.accuracy_score),
+          response_time_sec: d3.extent(data, (d) => d.response_time_sec),
+          confidence_rating: d3.extent(data, (d) => d.confidence_rating),
+          stress_level: d3.extent(data, (d) => d.stress_level),
+          communication_events: d3.extent(data, (d) => d.communication_events)
+        }
+      };
+    }
+
+    /**
+     * Return the event rows matching all active filters.
+     * @returns {object[]}
+     */
+    function getFilteredData() {
+      return exerciseData.filter((d) =>
+        appState.filters.team.has(d.team) &&
+        appState.filters.exercise_day.has(d.exercise_day) &&
+        appState.filters.scenario.has(d.scenario) &&
+        appState.filters.phase.has(d.phase) &&
+        appState.filters.decision_type.has(d.decision_type)
+      );
+    }
+
+    /**
+     * Compute the rate of events with any error flag set.
+     * @param {object[]} data
+     * @returns {number}
+     */
+    function calcAnyFlagRate(data) {
+      if (!data.length) return 0;
+      return (d3.mean(data, (d) => d.any_flag) ?? 0) * 100;
+    }
+
+    /**
+     * Normalize a value to a 0-100 score.
+     * @param {number} value
+     * @param {[number, number]} extent
+     * @param {boolean} invert
+     * @returns {number}
+     */
+    function normalizeToHundred(value, extent, invert = false) {
+      const [min, max] = extent;
+      if (min == null || max == null || max === min) return 50;
+      const ratio = (value - min) / (max - min);
+      const normalized = invert ? 1 - ratio : ratio;
+      return Math.max(0, Math.min(100, normalized * 100));
+    }
+
+    /**
+     * Return a sorted list of the currently selected teams.
+     * @returns {string[]}
+     */
+    function getSelectedTeams() {
+      return TEAM_ORDER.filter((team) => appState.filters.team.has(team));
+    }
+
+    /**
+     * Format a numeric value to a display string by field.
+     * @param {string} key
+     * @param {any} value
+     * @returns {string}
+     */
+    function formatValueByField(key, value) {
+      if (value == null || value === "") return "—";
+      if (typeof value === "number") {
+        if (["accuracy_score"].includes(key)) return `${value.toFixed(1)}%`;
+        if (["response_time_sec"].includes(key)) return `${value.toFixed(1)}s`;
+        if (["confidence_rating", "stress_level"].includes(key)) return value.toFixed(1);
+        if (["experience_years", "communication_events", "exercise_day"].includes(key)) return `${Math.round(value)}`;
+        if (key.endsWith("_flag") || key === "any_flag") return `${value}`;
+        return value.toFixed(1);
+      }
+      return String(value);
+    }
+
+    /**
+     * Format the exercise day selection compactly.
+     * @param {Set<number>} set
+     * @returns {string}
+     */
+    function formatDaySelection(set) {
+      const values = DAY_ORDER.filter((day) => set.has(day));
+      if (values.length === DAY_ORDER.length) return "1-5";
+      if (!values.length) return "None";
+      const ranges = [];
+      let start = values[0];
+      let prev = values[0];
+      for (let i = 1; i <= values.length; i += 1) {
+        const curr = values[i];
+        if (curr === prev + 1) {
+          prev = curr;
+          continue;
+        }
+        ranges.push(start === prev ? `${start}` : `${start}-${prev}`);
+        start = curr;
+        prev = curr;
+      }
+      return ranges.join(", ");
+    }
+
+    /**
+     * Format a set of string filters compactly.
+     * @param {Set<string>} set
+     * @param {string[]} domain
+     * @returns {string}
+     */
+    function formatSelection(set, domain) {
+      const values = domain.filter((value) => set.has(value));
+      if (values.length === domain.length) return "All";
+      if (!values.length) return "None";
+      return values.join(", ");
+    }
+
+    /**
+     * Build the filter summary text shown in the header.
+     * @param {object[]} data
+     * @returns {string}
+     */
+    function buildFilterSummary(data) {
+      const teamSummary = formatSelection(appState.filters.team, TEAM_ORDER);
+      const daySummary = formatDaySelection(appState.filters.exercise_day);
+      const scenarioSummary = appState.filters.scenario.size === SCENARIO_ORDER.length
+        ? "All scenarios"
+        : `${appState.filters.scenario.size} scenarios`;
+      const phaseSummary = appState.filters.phase.size === PHASE_ORDER.length
+        ? "All phases"
+        : formatSelection(appState.filters.phase, PHASE_ORDER);
+      return `Showing ${data.length} events | Teams: ${teamSummary} | Days: ${daySummary} | ${scenarioSummary} | Phases: ${phaseSummary}`;
+    }
+
+    /**
+     * Convert an array of event rows to CSV text in original field order.
+     * @param {object[]} rows
+     * @returns {string}
+     */
+    function rowsToCsv(rows) {
+      const escapeCell = (value) => {
+        const stringValue = value == null ? "" : String(value);
+        if (/[",\n]/.test(stringValue)) {
+          return `"${stringValue.replace(/"/g, "\"\"")}"`;
+        }
+        return stringValue;
+      };
+
+      const lines = [
+        RAW_FIELDS.join(","),
+        ...rows.map((row) => RAW_FIELDS.map((field) => escapeCell(getRawFieldValue(row, field))).join(","))
+      ];
+      return lines.join("\n");
+    }
+
+    /**
+     * Retrieve the raw-style value for export and drill-down.
+     * @param {object} row
+     * @param {string} field
+     * @returns {string|number}
+     */
+    function getRawFieldValue(row, field) {
+      if (field === "exercise_day") return row.exercise_day;
+      if (field === "experience_years") return row.experience_years;
+      if (field === "accuracy_score") return row.accuracy_score.toFixed(1);
+      if (field === "response_time_sec") return row.response_time_sec.toFixed(1);
+      if (field === "confidence_rating") return row.confidence_rating.toFixed(1);
+      if (field === "stress_level") return row.stress_level.toFixed(1);
+      if (field === "communication_events") return row.communication_events;
+      if (field.endsWith("_flag")) return row[field];
+      return row[field];
+    }
+
+    /**
+     * Download a CSV blob to the user's machine.
+     * @param {string} filename
+     * @param {string} text
+     */
+    function downloadTextFile(filename, text) {
+      const blob = new Blob([text], { type: "text/csv;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = filename;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    /**
+     * Display a transient toast message.
+     * @param {string} message
+     */
+    function showToast(message) {
+      const toast = document.getElementById("toast");
+      toast.textContent = message;
+      toast.classList.add("visible");
+      clearTimeout(appState.toastTimer);
+      appState.toastTimer = window.setTimeout(() => {
+        toast.classList.remove("visible");
+      }, 2200);
+    }
+
+    /**
+     * Show a tooltip near the pointer.
+     * @param {PointerEvent|MouseEvent} event
+     * @param {string} html
+     */
+    function showTooltip(event, html) {
+      const tooltip = document.getElementById("tooltip");
+      tooltip.innerHTML = html;
+      tooltip.classList.add("visible");
+      moveTooltip(event);
+    }
+
+    /**
+     * Reposition the tooltip around the pointer while keeping it in view.
+     * @param {PointerEvent|MouseEvent} event
+     */
+    function moveTooltip(event) {
+      const tooltip = document.getElementById("tooltip");
+      const padding = 18;
+      const rect = tooltip.getBoundingClientRect();
+      let x = event.clientX + 16;
+      let y = event.clientY + 16;
+      if (x + rect.width + padding > window.innerWidth) {
+        x = event.clientX - rect.width - 16;
+      }
+      if (y + rect.height + padding > window.innerHeight) {
+        y = event.clientY - rect.height - 16;
+      }
+      tooltip.style.transform = `translate(${x}px, ${y}px)`;
+    }
+
+    /**
+     * Hide the shared tooltip.
+     */
+    function hideTooltip() {
+      const tooltip = document.getElementById("tooltip");
+      tooltip.classList.remove("visible");
+      tooltip.style.transform = "translate(-9999px, -9999px)";
+    }
+
+    /**
+     * Return the opacity to apply to a mark based on the team highlight selection.
+     * @param {string} team
+     * @returns {number}
+     */
+    function teamOpacity(team) {
+      if (!appState.highlightTeam) return 1;
+      return appState.highlightTeam === team ? 1 : 0.2;
+    }
+
+    /**
+     * Toggle the highlighted team used for cross-chart emphasis.
+     * @param {string} team
+     */
+    function toggleTeamHighlight(team) {
+      appState.highlightTeam = appState.highlightTeam === team ? null : team;
+      renderAll();
+    }
+
+    /**
+     * Open the raw-data drawer for a subset of rows.
+     * @param {string} title
+     * @param {object[]} rows
+     */
+    function openDrawer(title, rows) {
+      appState.drawer.open = true;
+      appState.drawer.title = title;
+      appState.drawer.rows = [...rows];
+      appState.drawer.sortKey = "timestamp";
+      appState.drawer.sortDirection = "desc";
+      renderDrawer();
+    }
+
+    /**
+     * Close the raw-data drawer.
+     */
+    function closeDrawer() {
+      appState.drawer.open = false;
+      renderDrawer();
+    }
+
+    /**
+     * Return rows sorted according to the current drawer settings.
+     * @returns {object[]}
+     */
+    function getSortedDrawerRows() {
+      const rows = [...appState.drawer.rows];
+      const { sortKey, sortDirection } = appState.drawer;
+      const direction = sortDirection === "asc" ? 1 : -1;
+
+      rows.sort((a, b) => {
+        let av = a[sortKey];
+        let bv = b[sortKey];
+
+        if (sortKey === "timestamp") {
+          av = a.timestamp_date?.getTime() ?? 0;
+          bv = b.timestamp_date?.getTime() ?? 0;
+        }
+
+        if (typeof av === "number" && typeof bv === "number") {
+          return (av - bv) * direction;
+        }
+
+        return String(av).localeCompare(String(bv)) * direction;
+      });
+
+      return rows;
+    }
+
+    /**
+     * Perform a linear regression for x/y pairs.
+     * @param {{x:number,y:number}[]} points
+     * @returns {{slope:number, intercept:number}|null}
+     */
+    function linearRegression(points) {
+      if (points.length < 2) return null;
+      const xMean = d3.mean(points, (d) => d.x) ?? 0;
+      const yMean = d3.mean(points, (d) => d.y) ?? 0;
+      const numerator = d3.sum(points, (d) => (d.x - xMean) * (d.y - yMean));
+      const denominator = d3.sum(points, (d) => (d.x - xMean) ** 2);
+      if (!denominator) return null;
+      const slope = numerator / denominator;
+      const intercept = yMean - slope * xMean;
+      return { slope, intercept };
+    }
+
+    /**
+     * Compute a Pearson correlation coefficient for two numeric arrays.
+     * @param {number[]} xs
+     * @param {number[]} ys
+     * @returns {number}
+     */
+    function correlation(xs, ys) {
+      if (xs.length !== ys.length || xs.length < 2) return 0;
+      const xMean = d3.mean(xs) ?? 0;
+      const yMean = d3.mean(ys) ?? 0;
+      const numerator = d3.sum(xs, (x, i) => (x - xMean) * (ys[i] - yMean));
+      const xDen = Math.sqrt(d3.sum(xs, (x) => (x - xMean) ** 2));
+      const yDen = Math.sqrt(d3.sum(ys, (y) => (y - yMean) ** 2));
+      if (!xDen || !yDen) return 0;
+      return numerator / (xDen * yDen);
+    }
+
+    /**
+     * Persist the current state into the URL hash for bookmarking.
+     * @returns {string}
+     */
+    function buildShareHash() {
+      const serializable = {
+        filters: {
+          team: [...appState.filters.team],
+          exercise_day: [...appState.filters.exercise_day],
+          scenario: [...appState.filters.scenario],
+          phase: [...appState.filters.phase],
+          decision_type: [...appState.filters.decision_type]
+        },
+        highlightTeam: appState.highlightTeam,
+        errorMode: appState.errorMode
+      };
+      return `view=${encodeURIComponent(JSON.stringify(serializable))}`;
+    }
+
+    /**
+     * Apply a shared-view hash if one is present.
+     */
+    function hydrateFromHash() {
+      if (!window.location.hash.startsWith("#view=")) return;
+
+      try {
+        const payload = JSON.parse(decodeURIComponent(window.location.hash.slice(6)));
+        const safeSet = (values, allowed) => new Set((values || []).filter((value) => allowed.includes(value)));
+
+        if (payload.filters) {
+          appState.filters.team = safeSet(payload.filters.team, TEAM_ORDER);
+          appState.filters.exercise_day = safeSet(payload.filters.exercise_day, DAY_ORDER);
+          appState.filters.scenario = safeSet(payload.filters.scenario, SCENARIO_ORDER);
+          appState.filters.phase = safeSet(payload.filters.phase, PHASE_ORDER);
+          appState.filters.decision_type = safeSet(payload.filters.decision_type, DECISION_ORDER);
+        }
+
+        if (TEAM_ORDER.includes(payload.highlightTeam)) {
+          appState.highlightTeam = payload.highlightTeam;
+        } else {
+          appState.highlightTeam = null;
+        }
+
+        if (["exercise_day", "scenario"].includes(payload.errorMode)) {
+          appState.errorMode = payload.errorMode;
+        }
+      } catch (error) {
+        console.warn("Unable to parse shared view state:", error);
+      }
+    }
+
+    /**
+     * Ensure empty filter sets can still be represented visually.
+     * @param {Set<any>} set
+     * @param {any[]} fallbackDomain
+     * @returns {Set<any>}
+     */
+    function ensureSet(set, fallbackDomain) {
+      return set.size ? set : new Set();
+    }
+
+    /**
+     * Provide a consistent empty-state message inside an SVG.
+     * @param {d3.Selection<SVGSVGElement, unknown, null, undefined>} svg
+     * @param {number} width
+     * @param {number} height
+     * @param {string} message
+     */
+    function renderEmptySvg(svg, width, height, message) {
+      svg.selectAll("*").remove();
+      svg.attr("viewBox", `0 0 ${width} ${height}`);
+      svg.append("text")
+        .attr("class", "empty-chart-label")
+        .attr("x", width / 2)
+        .attr("y", height / 2)
+        .text(message);
+    }
+
+    /**
+     * Build per-day series for a metric.
+     * @param {object[]} data
+     * @param {(row: object) => number} accessor
+     * @returns {{day:number,value:number}[]}
+     */
+    function buildDaySeries(data, accessor) {
+      return DAY_ORDER.map((day) => {
+        const rows = data.filter((d) => d.exercise_day === day);
+        return {
+          day,
+          value: rows.length ? (d3.mean(rows, accessor) ?? 0) : 0
+        };
+      });
+    }
+
+    /**
+     * Render a tiny sparkline into an SVG selection.
+     * @param {d3.Selection<SVGSVGElement, unknown, null, undefined>} svg
+     * @param {{day:number,value:number}[]} series
+     * @param {string} color
+     */
+    function renderSparkline(svg, series, color) {
+      const width = 132;
+      const height = 40;
+      const margin = { top: 4, right: 2, bottom: 4, left: 2 };
+      const x = d3.scaleLinear().domain(d3.extent(series, (d) => d.day)).range([margin.left, width - margin.right]);
+      const extent = d3.extent(series, (d) => d.value);
+      const padded = extent[0] === extent[1] ? [extent[0] - 1, extent[1] + 1] : extent;
+      const y = d3.scaleLinear().domain(padded).nice().range([height - margin.bottom, margin.top]);
+      const line = d3.line().x((d) => x(d.day)).y((d) => y(d.value)).curve(d3.curveMonotoneX);
+      const area = d3.area().x((d) => x(d.day)).y0(height - margin.bottom).y1((d) => y(d.value)).curve(d3.curveMonotoneX);
+
+      svg.selectAll("*").remove();
+      svg.attr("viewBox", `0 0 ${width} ${height}`);
+      svg.append("path")
+        .datum(series)
+        .attr("fill", d3.color(color).copy({ opacity: 0.15 }))
+        .attr("d", area);
+      svg.append("path")
+        .datum(series)
+        .attr("fill", "none")
+        .attr("stroke", color)
+        .attr("stroke-width", 2)
+        .attr("d", line);
+      svg.selectAll("circle")
+        .data(series)
+        .join("circle")
+        .attr("cx", (d) => x(d.day))
+        .attr("cy", (d) => y(d.value))
+        .attr("r", 2.6)
+        .attr("fill", color);
+    }
+
+    /**
+     * Render the shared team legend used for cross-highlighting.
+     * @param {string} containerId
+     * @param {string[]} teams
+     */
+    function renderTeamLegend(containerId, teams) {
+      const container = document.getElementById(containerId);
+      container.innerHTML = "";
+
+      teams.forEach((team) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "legend-chip";
+        if (appState.highlightTeam === team) {
+          button.classList.add("active");
+        } else if (appState.highlightTeam) {
+          button.classList.add("dimmed");
+        }
+        button.innerHTML = `
+          <span class="legend-swatch" style="--legend-color:${TEAM_COLORS[team]}"></span>
+          <span>${team}</span>
+        `;
+        button.addEventListener("click", () => toggleTeamHighlight(team));
+        container.appendChild(button);
+      });
+    }
+
+    /**
+     * Return the width of a chart container, with a sensible fallback.
+     * @param {string} containerId
+     * @returns {number}
+     */
+    function containerWidth(containerId) {
+      const width = document.getElementById(containerId).clientWidth;
+      return Math.max(width, 320);
+    }
+
+    /**
+     * Build a contextual summary object for the AI analyst prompt.
+     * @param {object[]} data
+     * @param {string} question
+     * @returns {object}
+     */
+    function buildInsightContext(data, question) {
+      const perTeam = TEAM_ORDER.map((team) => {
+        const rows = data.filter((d) => d.team === team);
+        if (!rows.length) return null;
+        return {
+          team,
+          event_count: rows.length,
+          avg_accuracy: +(d3.mean(rows, (d) => d.accuracy_score) ?? 0).toFixed(2),
+          avg_response_time_sec: +(d3.mean(rows, (d) => d.response_time_sec) ?? 0).toFixed(2),
+          avg_stress: +(d3.mean(rows, (d) => d.stress_level) ?? 0).toFixed(2),
+          avg_confidence: +(d3.mean(rows, (d) => d.confidence_rating) ?? 0).toFixed(2),
+          error_flag_rate_pct: +calcAnyFlagRate(rows).toFixed(2)
+        };
+      }).filter(Boolean);
+
+      const rankedTeams = [...perTeam].sort((a, b) => b.avg_accuracy - a.avg_accuracy);
+
+      return {
+        active_filters: {
+          team: [...appState.filters.team],
+          exercise_day: [...appState.filters.exercise_day],
+          scenario: [...appState.filters.scenario],
+          phase: [...appState.filters.phase],
+          decision_type: [...appState.filters.decision_type]
+        },
+        filtered_event_count: data.length,
+        unique_participants: new Set(data.map((d) => d.participant_id)).size,
+        per_team_summary: perTeam,
+        error_flag_rates_per_day: DAY_ORDER.map((day) => {
+          const dayRows = data.filter((d) => d.exercise_day === day);
+          return {
+            day,
+            event_count: dayRows.length,
+            error_flag_rate_pct: +calcAnyFlagRate(dayRows).toFixed(2)
+          };
+        }),
+        top_performing_team: rankedTeams[0] ?? null,
+        bottom_performing_team: rankedTeams[rankedTeams.length - 1] ?? null,
+        user_question: question
+      };
+    }
+
+    /**
+     * Make a streaming or non-streaming Anthropic API call for an AI insight.
+     * @param {object} context
+     * @param {(text: string) => void} onDelta
+     * @returns {Promise<string>}
+     */
+    async function fetchInsight(context, onDelta) {
+      const apiKey = document.getElementById("anthropic-key-input").value.trim();
+      if (!apiKey) {
+        throw new Error("Enter an Anthropic API key to generate an insight.");
+      }
+
+      const body = {
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 800,
+        system: "You are a military cognitive performance analyst reviewing after-action data from a 5-day training exercise. Answer questions concisely and analytically, citing specific teams, metrics, or days when relevant. Format with brief headers where useful.",
+        stream: true,
+        messages: [
+          {
+            role: "user",
+            content: `Exercise analysis context:\n${JSON.stringify(context, null, 2)}`
+          }
+        ]
+      };
+
+      const response = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "anthropic-version": "2023-06-01",
+          "x-api-key": apiKey
+        },
+        body: JSON.stringify(body)
+      });
+
+      if (!response.ok) {
+        let detail = `${response.status} ${response.statusText}`;
+        try {
+          const errorBody = await response.json();
+          detail = errorBody?.error?.message || detail;
+        } catch (error) {
+          console.warn("Unable to parse Anthropic error response:", error);
+        }
+        throw new Error(detail);
+      }
+
+      const contentType = response.headers.get("content-type") || "";
+      if (!contentType.includes("text/event-stream") || !response.body) {
+        const json = await response.json();
+        return json.content?.map((block) => block.text || "").join("") || "";
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let fullText = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const chunks = buffer.split("\n\n");
+        buffer = chunks.pop() || "";
+
+        chunks.forEach((chunk) => {
+          const lines = chunk.split("\n");
+          let dataLine = "";
+          lines.forEach((line) => {
+            if (line.startsWith("data:")) {
+              dataLine += line.slice(5).trim();
+            }
+          });
+
+          if (!dataLine || dataLine === "[DONE]") return;
+
+          let payload;
+          try {
+            payload = JSON.parse(dataLine);
+          } catch (error) {
+            return;
+          }
+
+          if (payload.type === "content_block_delta" && payload.delta?.text) {
+            fullText += payload.delta.text;
+            onDelta(fullText);
+          }
+        });
+      }
+
+      return fullText;
+    }
+
+    /* =========================
+       CHARTS: KPI SUMMARY
+    ========================= */
+
+    /**
+     * Render the KPI strip at the top of the dashboard.
+     * @param {object[]} data
+     */
+    function renderKpis(data) {
+      const container = d3.select("#kpi-strip");
+      container.html("");
+
+      const metrics = [
+        {
+          key: "accuracy_score",
+          label: "Avg Accuracy Score",
+          color: "#10b981",
+          better: "higher",
+          value: d3.mean(data, (d) => d.accuracy_score) ?? 0,
+          baseline: globalStats.means.accuracy_score,
+          series: buildDaySeries(data, (d) => d.accuracy_score),
+          formatter: (value) => `${value.toFixed(1)}%`
+        },
+        {
+          key: "response_time_sec",
+          label: "Avg Response Time",
+          color: "#00d4ff",
+          better: "lower",
+          value: d3.mean(data, (d) => d.response_time_sec) ?? 0,
+          baseline: globalStats.means.response_time_sec,
+          series: buildDaySeries(data, (d) => d.response_time_sec),
+          formatter: (value) => `${value.toFixed(1)}s`
+        },
+        {
+          key: "stress_level",
+          label: "Avg Stress Level",
+          color: "#f59e0b",
+          better: "lower",
+          value: d3.mean(data, (d) => d.stress_level) ?? 0,
+          baseline: globalStats.means.stress_level,
+          series: buildDaySeries(data, (d) => d.stress_level),
+          formatter: (value) => value.toFixed(1)
+        },
+        {
+          key: "error_rate",
+          label: "Error Flag Rate",
+          color: "#ef4444",
+          better: "lower",
+          value: calcAnyFlagRate(data),
+          baseline: globalStats.means.error_rate,
+          series: DAY_ORDER.map((day) => {
+            const rows = data.filter((d) => d.exercise_day === day);
+            return { day, value: calcAnyFlagRate(rows) };
+          }),
+          formatter: (value) => `${value.toFixed(1)}%`
+        }
+      ];
+
+      metrics.forEach((metric) => {
+        const delta = metric.value - metric.baseline;
+        const deltaDirection = delta > 0 ? "▲" : delta < 0 ? "▼" : "■";
+        const improved = metric.better === "higher" ? delta >= 0 : delta <= 0;
+
+        const card = container.append("div").attr("class", "kpi-card");
+        card.html(`
+          <div class="kpi-label">${metric.label}</div>
+          <div class="kpi-value-row">
+            <div class="kpi-value">${data.length ? metric.formatter(metric.value) : "—"}</div>
+            <div class="kpi-delta ${delta === 0 ? "" : improved ? "positive" : "negative"}">
+              ${deltaDirection} ${Math.abs(delta).toFixed(1)} vs overall
+            </div>
+          </div>
+          <svg class="chart-svg" aria-hidden="true"></svg>
+          <div class="sparkline-label">
+            <span>Day 1</span>
+            <span>Day 5</span>
+          </div>
+        `);
+
+        const spark = card.select("svg");
+        renderSparkline(spark, metric.series, metric.color);
+      });
+    }
+
+    /* =========================
+       CHARTS: RADAR
+    ========================= */
+
+    /**
+     * Render the team radar chart.
+     * @param {object[]} data
+     */
+    function renderRadar(data) {
+      const svg = d3.select("#radar-chart");
+      const width = containerWidth("radar-wrap");
+      const height = 430;
+      const radius = Math.min(width, height) * 0.32;
+      const centerX = width / 2;
+      const centerY = height / 2 - 8;
+      const teams = getSelectedTeams();
+
+      if (!teams.length || !data.length) {
+        renderEmptySvg(svg, width, height, "No events available for the current filter selection.");
+        renderTeamLegend("radar-legend", teams);
+        return;
+      }
+
+      svg.selectAll("*").remove();
+      svg.attr("viewBox", `0 0 ${width} ${height}`);
+
+      const transition = d3.transition().duration(400).ease(d3.easeCubicOut);
+
+      const metrics = [
+        {
+          label: "Accuracy Score",
+          accessor: (rows) => d3.mean(rows, (d) => d.accuracy_score) ?? 0,
+          normalize: (value) => normalizeToHundred(value, globalStats.extents.accuracy_score)
+        },
+        {
+          label: "Response Speed",
+          accessor: (rows) => d3.mean(rows, (d) => d.response_time_sec) ?? 0,
+          normalize: (value) => normalizeToHundred(value, globalStats.extents.response_time_sec, true)
+        },
+        {
+          label: "Confidence Rating",
+          accessor: (rows) => d3.mean(rows, (d) => d.confidence_rating) ?? 0,
+          normalize: (value) => normalizeToHundred(value, globalStats.extents.confidence_rating)
+        },
+        {
+          label: "Low Stress",
+          accessor: (rows) => d3.mean(rows, (d) => d.stress_level) ?? 0,
+          normalize: (value) => normalizeToHundred(value, globalStats.extents.stress_level, true)
+        },
+        {
+          label: "Communication Effectiveness",
+          accessor: (rows) => {
+            const commScore = normalizeToHundred(
+              d3.mean(rows, (d) => d.communication_events) ?? 0,
+              globalStats.extents.communication_events
+            );
+            const breakdownPenalty = (d3.mean(rows, (d) => d.communication_breakdown_flag) ?? 0) * 35;
+            return Math.max(0, Math.min(100, commScore - breakdownPenalty));
+          },
+          normalize: (value) => value
+        }
+      ];
+
+      const teamSeries = teams.map((team) => {
+        const rows = data.filter((d) => d.team === team);
+        return {
+          team,
+          rows,
+          values: metrics.map((metric) => {
+            const raw = metric.accessor(rows);
+            const score = metric.normalize(raw);
+            return { axis: metric.label, raw, score };
+          })
+        };
+      }).filter((entry) => entry.rows.length);
+
+      if (!teamSeries.length) {
+        renderEmptySvg(svg, width, height, "The selected teams have no events in this slice.");
+        renderTeamLegend("radar-legend", teams);
+        return;
+      }
+
+      const rScale = d3.scaleLinear().domain([0, 100]).range([0, radius]);
+      const angleForIndex = (index) => (Math.PI * 2 * index / metrics.length) - Math.PI / 2;
+      const group = svg.append("g").attr("transform", `translate(${centerX}, ${centerY})`);
+
+      [20, 40, 60, 80, 100].forEach((level) => {
+        const points = metrics.map((_, index) => {
+          const angle = angleForIndex(index);
+          const r = rScale(level);
+          return [Math.cos(angle) * r, Math.sin(angle) * r];
+        });
+        group.append("path")
+          .attr("d", d3.line().curve(d3.curveLinearClosed)(points))
+          .attr("fill", "none")
+          .attr("stroke", "rgba(30,45,64,0.95)")
+          .attr("stroke-width", 1);
+      });
+
+      metrics.forEach((metric, index) => {
+        const angle = angleForIndex(index);
+        const x = Math.cos(angle) * radius;
+        const y = Math.sin(angle) * radius;
+
+        group.append("line")
+          .attr("x1", 0)
+          .attr("y1", 0)
+          .attr("x2", x)
+          .attr("y2", y)
+          .attr("stroke", "rgba(148,163,184,0.24)")
+          .attr("stroke-width", 1);
+
+        group.append("text")
+          .attr("x", Math.cos(angle) * (radius + 22))
+          .attr("y", Math.sin(angle) * (radius + 22))
+          .attr("fill", "#cbd5e1")
+          .attr("font-size", 11)
+          .attr("font-family", "var(--mono)")
+          .attr("text-anchor", Math.abs(Math.cos(angle)) < 0.15 ? "middle" : Math.cos(angle) > 0 ? "start" : "end")
+          .attr("alignment-baseline", Math.abs(Math.sin(angle)) < 0.15 ? "middle" : Math.sin(angle) > 0 ? "hanging" : "ideographic")
+          .text(metric.label);
+      });
+
+      const line = d3.line()
+        .x((d, index) => Math.cos(angleForIndex(index)) * rScale(d.score))
+        .y((d, index) => Math.sin(angleForIndex(index)) * rScale(d.score))
+        .curve(d3.curveLinearClosed);
+
+      const polygons = group.selectAll(".radar-series")
+        .data(teamSeries)
+        .join("g")
+        .attr("class", "radar-series")
+        .style("opacity", (d) => teamOpacity(d.team));
+
+      polygons.append("path")
+        .attr("fill", (d) => d3.color(TEAM_COLORS[d.team]).copy({ opacity: 0.2 }))
+        .attr("stroke", (d) => TEAM_COLORS[d.team])
+        .attr("stroke-width", 2.2)
+        .attr("d", (d) => line(d.values))
+        .style("cursor", "pointer")
+        .style("opacity", 0)
+        .transition(transition)
+        .style("opacity", 1);
+
+      polygons.selectAll("circle")
+        .data((d) => d.values.map((value) => ({ ...value, team: d.team, rows: d.rows })))
+        .join("circle")
+        .attr("cx", (d, index) => Math.cos(angleForIndex(index)) * rScale(d.score))
+        .attr("cy", (d, index) => Math.sin(angleForIndex(index)) * rScale(d.score))
+        .attr("r", 3.6)
+        .attr("fill", (d) => TEAM_COLORS[d.team])
+        .attr("stroke", "#0a0e1a")
+        .attr("stroke-width", 1.2)
+        .style("opacity", 0)
+        .transition(transition)
+        .style("opacity", 1);
+
+      polygons.on("mouseenter", function(event, d) {
+        d3.select(this).raise().transition().duration(160).style("opacity", 1);
+        const lines = d.values
+          .map((value) => `<div><span class="mono">${value.axis}</span>: ${value.score.toFixed(1)}</div>`)
+          .join("");
+        showTooltip(event, `<strong>${d.team}</strong>${lines}<div class="mono" style="margin-top:8px;">${d.rows.length} events</div>`);
+      }).on("mousemove", moveTooltip)
+        .on("mouseleave", function(_, d) {
+          d3.select(this).transition().duration(160).style("opacity", teamOpacity(d.team));
+          hideTooltip();
+        })
+        .on("click", (_, d) => {
+          openDrawer(`${d.team} radar subset`, d.rows);
+        });
+
+      renderTeamLegend("radar-legend", teams);
+    }
+
+    /* =========================
+       CHARTS: TIMELINE
+    ========================= */
+
+    /**
+     * Render the daily performance timeline.
+     * @param {object[]} data
+     */
+    function renderTimeline(data) {
+      const svg = d3.select("#timeline-chart");
+      const width = containerWidth("timeline-wrap");
+      const height = 380;
+      const margin = { top: 18, right: 48, bottom: 42, left: 48 };
+      const teams = getSelectedTeams();
+
+      if (!data.length || !teams.length) {
+        renderEmptySvg(svg, width, height, "Timeline unavailable because no rows match the active filters.");
+        renderTeamLegend("timeline-legend", teams);
+        return;
+      }
+
+      svg.selectAll("*").remove();
+      svg.attr("viewBox", `0 0 ${width} ${height}`);
+
+      const innerWidth = width - margin.left - margin.right;
+      const innerHeight = height - margin.top - margin.bottom;
+      const x = d3.scalePoint().domain(DAY_ORDER).range([0, innerWidth]).padding(0.4);
+      const y = d3.scaleLinear().domain([0, 100]).range([innerHeight, 0]);
+      const yStress = d3.scaleLinear().domain([1, 10]).range([innerHeight, 0]);
+      const g = svg.append("g").attr("transform", `translate(${margin.left}, ${margin.top})`);
+      const transition = d3.transition().duration(400).ease(d3.easeCubicOut);
+
+      DAY_ORDER.forEach((day) => {
+        g.append("line")
+          .attr("class", "grid-line")
+          .attr("x1", x(day))
+          .attr("x2", x(day))
+          .attr("y1", 0)
+          .attr("y2", innerHeight)
+          .attr("stroke-dasharray", "3,7");
+      });
+
+      g.selectAll(".grid-horizontal")
+        .data(y.ticks(5))
+        .join("line")
+        .attr("class", "grid-line")
+        .attr("x1", 0)
+        .attr("x2", innerWidth)
+        .attr("y1", (d) => y(d))
+        .attr("y2", (d) => y(d))
+        .attr("stroke-dasharray", "4,8");
+
+      const xAxis = d3.axisBottom(x).tickFormat((d) => `Day ${d}`);
+      const yAxis = d3.axisLeft(y).ticks(5);
+      const yAxisRight = d3.axisRight(yStress).ticks(5);
+
+      g.append("g")
+        .attr("class", "axis")
+        .attr("transform", `translate(0, ${innerHeight})`)
+        .call(xAxis);
+      g.append("g")
+        .attr("class", "axis")
+        .call(yAxis);
+      g.append("g")
+        .attr("class", "axis")
+        .attr("transform", `translate(${innerWidth}, 0)`)
+        .call(yAxisRight);
+
+      g.append("text")
+        .attr("x", -12)
+        .attr("y", -6)
+        .attr("fill", "#94a3b8")
+        .attr("font-size", 11)
+        .attr("font-family", "var(--mono)")
+        .text("Accuracy");
+      g.append("text")
+        .attr("x", innerWidth + 12)
+        .attr("y", -6)
+        .attr("fill", "#94a3b8")
+        .attr("font-size", 11)
+        .attr("font-family", "var(--mono)")
+        .attr("text-anchor", "end")
+        .text("Stress");
+
+      const line = d3.line()
+        .defined((d) => d.mean != null)
+        .x((d) => x(d.day))
+        .y((d) => y(d.mean))
+        .curve(d3.curveMonotoneX);
+
+      const area = d3.area()
+        .defined((d) => d.mean != null)
+        .x((d) => x(d.day))
+        .y0((d) => y(Math.max(0, d.mean - d.sd)))
+        .y1((d) => y(Math.min(100, d.mean + d.sd)))
+        .curve(d3.curveMonotoneX);
+
+      const teamSeries = teams.map((team) => {
+        const points = DAY_ORDER.map((day) => {
+          const rows = data.filter((d) => d.team === team && d.exercise_day === day);
+          return rows.length
+            ? {
+                team,
+                day,
+                rows,
+                mean: d3.mean(rows, (d) => d.accuracy_score) ?? 0,
+                sd: d3.deviation(rows, (d) => d.accuracy_score) ?? 0,
+                count: rows.length
+              }
+            : { team, day, rows: [], mean: null, sd: 0, count: 0 };
+        });
+        return { team, points, rows: data.filter((d) => d.team === team) };
+      });
+
+      const teamGroups = g.selectAll(".team-series")
+        .data(teamSeries.filter((d) => d.rows.length))
+        .join("g")
+        .attr("class", "team-series")
+        .style("opacity", (d) => teamOpacity(d.team));
+
+      teamGroups.append("path")
+        .attr("fill", (d) => d3.color(TEAM_COLORS[d.team]).copy({ opacity: 0.1 }))
+        .attr("d", (d) => area(d.points))
+        .style("opacity", 0)
+        .transition(transition)
+        .style("opacity", 1);
+
+      teamGroups.append("path")
+        .attr("fill", "none")
+        .attr("stroke", (d) => TEAM_COLORS[d.team])
+        .attr("stroke-width", 2.5)
+        .attr("d", (d) => line(d.points))
+        .style("opacity", 0)
+        .transition(transition)
+        .style("opacity", 1);
+
+      teamGroups.selectAll("circle")
+        .data((d) => d.points.filter((point) => point.mean != null).map((point) => ({ ...point, team: d.team })))
+        .join("circle")
+        .attr("cx", (d) => x(d.day))
+        .attr("cy", (d) => y(d.mean))
+        .attr("r", 4.5)
+        .attr("fill", (d) => TEAM_COLORS[d.team])
+        .attr("stroke", "#0a0e1a")
+        .attr("stroke-width", 1.2)
+        .style("cursor", "pointer")
+        .style("opacity", 0)
+        .transition(transition)
+        .style("opacity", 1);
+
+      teamGroups.selectAll("circle")
+        .on("mouseenter", (event, d) => {
+          showTooltip(
+            event,
+            `<strong>${d.team} · Day ${d.day}</strong>
+             <div>Avg accuracy: <span class="mono">${d.mean.toFixed(1)}%</span></div>
+             <div>Std dev: <span class="mono">${d.sd.toFixed(1)}</span></div>
+             <div>Events: <span class="mono">${d.count}</span></div>`
+          );
+        })
+        .on("mousemove", moveTooltip)
+        .on("mouseleave", hideTooltip)
+        .on("click", (_, d) => openDrawer(`${d.team} · Day ${d.day}`, d.rows));
+
+      const stressSeries = DAY_ORDER.map((day) => {
+        const rows = data.filter((d) => d.exercise_day === day);
+        return {
+          day,
+          value: rows.length ? (d3.mean(rows, (d) => d.stress_level) ?? 0) : null
+        };
+      });
+
+      const stressLine = d3.line()
+        .defined((d) => d.value != null)
+        .x((d) => x(d.day))
+        .y((d) => yStress(d.value))
+        .curve(d3.curveMonotoneX);
+
+      g.append("path")
+        .datum(stressSeries)
+        .attr("fill", "none")
+        .attr("stroke", "#f59e0b")
+        .attr("stroke-width", 2.2)
+        .attr("stroke-dasharray", "6,5")
+        .attr("d", stressLine)
+        .style("opacity", 0)
+        .transition(transition)
+        .style("opacity", 0.95);
+
+      g.append("text")
+        .attr("x", innerWidth - 4)
+        .attr("y", 10)
+        .attr("text-anchor", "end")
+        .attr("fill", "#fbbf24")
+        .attr("font-size", 11)
+        .attr("font-family", "var(--mono)")
+        .text("Avg Stress (all visible teams)");
+
+      renderTeamLegend("timeline-legend", teams);
+
+      const legendContainer = document.getElementById("timeline-legend");
+      const stressBadge = document.createElement("div");
+      stressBadge.className = "legend-label";
+      stressBadge.innerHTML = `<span class="legend-swatch" style="--legend-color:#f59e0b"></span><span>Stress reference</span>`;
+      legendContainer.appendChild(stressBadge);
+    }
+
+    /* =========================
+       CHARTS: HEATMAP
+    ========================= */
+
+    /**
+     * Render the domain x team heatmap.
+     * @param {object[]} data
+     */
+    function renderHeatmap(data) {
+      const svg = d3.select("#heatmap-chart");
+      const width = containerWidth("heatmap-wrap");
+      const height = 340;
+      const margin = { top: 38, right: 16, bottom: 18, left: 148 };
+      const teams = getSelectedTeams();
+
+      if (!data.length || !teams.length) {
+        renderEmptySvg(svg, width, height, "Heatmap unavailable for an empty result set.");
+        return;
+      }
+
+      svg.selectAll("*").remove();
+      svg.attr("viewBox", `0 0 ${width} ${height}`);
+
+      const innerWidth = width - margin.left - margin.right;
+      const innerHeight = height - margin.top - margin.bottom;
+      const x = d3.scaleBand().domain(teams).range([0, innerWidth]).paddingInner(0.08).paddingOuter(0.02);
+      const y = d3.scaleBand().domain(DOMAIN_ORDER).range([0, innerHeight]).paddingInner(0.08).paddingOuter(0.02);
+      const color = d3.scaleLinear().domain([60, 80, 100]).range(["#ef4444", "#f59e0b", "#10b981"]).clamp(true);
+      const g = svg.append("g").attr("transform", `translate(${margin.left}, ${margin.top})`);
+      const defs = svg.append("defs");
+      defs.append("pattern")
+        .attr("id", "heatmap-hatch")
+        .attr("patternUnits", "userSpaceOnUse")
+        .attr("width", 8)
+        .attr("height", 8)
+        .attr("patternTransform", "rotate(45)")
+        .append("line")
+        .attr("x1", 0)
+        .attr("x2", 0)
+        .attr("y1", 0)
+        .attr("y2", 8)
+        .attr("stroke", "rgba(226,232,240,0.35)")
+        .attr("stroke-width", 2);
+
+      DOMAIN_ORDER.forEach((domain) => {
+        g.append("text")
+          .attr("x", -10)
+          .attr("y", (y(domain) ?? 0) + y.bandwidth() / 2)
+          .attr("fill", "#cbd5e1")
+          .attr("font-size", 12)
+          .attr("text-anchor", "end")
+          .attr("alignment-baseline", "middle")
+          .text(domain);
+      });
+
+      teams.forEach((team) => {
+        g.append("text")
+          .attr("x", (x(team) ?? 0) + x.bandwidth() / 2)
+          .attr("y", -14)
+          .attr("fill", TEAM_COLORS[team])
+          .attr("font-size", 12)
+          .attr("font-weight", 700)
+          .attr("text-anchor", "middle")
+          .text(team);
+      });
+
+      const cells = DOMAIN_ORDER.flatMap((domain) =>
+        teams.map((team) => {
+          const rows = data.filter((d) => d.cognitive_domain === domain && d.team === team);
+          return {
+            domain,
+            team,
+            rows,
+            count: rows.length,
+            avgAccuracy: rows.length ? (d3.mean(rows, (d) => d.accuracy_score) ?? 0) : null,
+            avgConfidence: rows.length ? (d3.mean(rows, (d) => d.confidence_rating) ?? 0) : null,
+            avgStress: rows.length ? (d3.mean(rows, (d) => d.stress_level) ?? 0) : null
+          };
+        })
+      );
+
+      const cellGroup = g.selectAll(".heat-cell")
+        .data(cells)
+        .join("g")
+        .attr("class", "heat-cell")
+        .attr("transform", (d) => `translate(${x(d.team)}, ${y(d.domain)})`)
+        .style("opacity", (d) => teamOpacity(d.team));
+
+      cellGroup.append("rect")
+        .attr("width", x.bandwidth())
+        .attr("height", y.bandwidth())
+        .attr("rx", 0)
+        .attr("fill", (d) => d.avgAccuracy == null ? "rgba(15,23,38,0.8)" : color(d.avgAccuracy))
+        .attr("stroke", "rgba(30,45,64,0.96)")
+        .attr("stroke-width", 1.2)
+        .style("cursor", (d) => d.count ? "pointer" : "default");
+
+      cellGroup.filter((d) => d.count > 0 && d.count < 3)
+        .append("rect")
+        .attr("width", x.bandwidth())
+        .attr("height", y.bandwidth())
+        .attr("fill", "url(#heatmap-hatch)")
+        .attr("pointer-events", "none");
+
+      cellGroup.append("text")
+        .attr("x", x.bandwidth() / 2)
+        .attr("y", y.bandwidth() / 2)
+        .attr("fill", (d) => d.avgAccuracy != null && d.avgAccuracy < 78 ? "#f8fafc" : "#0a0e1a")
+        .attr("font-size", 13)
+        .attr("font-weight", 800)
+        .attr("text-anchor", "middle")
+        .attr("alignment-baseline", "middle")
+        .text((d) => {
+          if (d.avgAccuracy == null) return "—";
+          return `${d.avgAccuracy.toFixed(1)}${d.count < 3 ? "*" : ""}`;
+        });
+
+      cellGroup.on("mouseenter", (event, d) => {
+        if (!d.count) return;
+        showTooltip(
+          event,
+          `<strong>${d.domain} · ${d.team}</strong>
+           <div>Avg accuracy: <span class="mono">${d.avgAccuracy.toFixed(1)}%</span></div>
+           <div>Avg confidence: <span class="mono">${d.avgConfidence.toFixed(1)}</span></div>
+           <div>Avg stress: <span class="mono">${d.avgStress.toFixed(1)}</span></div>
+           <div>Events: <span class="mono">${d.count}</span>${d.count < 3 ? " (low sample)" : ""}</div>`
+        );
+      }).on("mousemove", moveTooltip)
+        .on("mouseleave", hideTooltip)
+        .on("click", (_, d) => {
+          if (d.count) openDrawer(`${d.domain} · ${d.team}`, d.rows);
+        });
+    }
+
+    /* =========================
+       CHARTS: SCATTER
+    ========================= */
+
+    /**
+     * Render the stress vs. accuracy scatter plot.
+     * @param {object[]} data
+     */
+    function renderScatter(data) {
+      const svg = d3.select("#scatter-chart");
+      const width = containerWidth("scatter-wrap");
+      const height = 430;
+      const margin = { top: 20, right: 18, bottom: 46, left: 54 };
+      const teams = getSelectedTeams();
+
+      if (!data.length || !teams.length) {
+        renderEmptySvg(svg, width, height, "Scatter plot unavailable for the current selection.");
+        document.getElementById("scatter-legend").innerHTML = "";
+        return;
+      }
+
+      svg.selectAll("*").remove();
+      svg.attr("viewBox", `0 0 ${width} ${height}`);
+
+      const innerWidth = width - margin.left - margin.right;
+      const innerHeight = height - margin.top - margin.bottom;
+      const x = d3.scaleLinear().domain([1, 10]).range([0, innerWidth]);
+      const y = d3.scaleLinear().domain([0, 100]).range([innerHeight, 0]);
+      const size = d3.scaleSqrt().domain(globalStats.extents.response_time_sec).range([32, 260]);
+      const g = svg.append("g").attr("transform", `translate(${margin.left}, ${margin.top})`);
+      const transition = d3.transition().duration(400).ease(d3.easeCubicOut);
+
+      g.append("rect")
+        .attr("x", x(1))
+        .attr("y", y(100))
+        .attr("width", x(4) - x(1))
+        .attr("height", y(85) - y(100))
+        .attr("fill", "rgba(16,185,129,0.08)")
+        .attr("stroke", "rgba(16,185,129,0.28)")
+        .attr("stroke-dasharray", "6,6");
+
+      g.append("text")
+        .attr("x", x(1) + 8)
+        .attr("y", y(100) + 18)
+        .attr("fill", "#34d399")
+        .attr("font-size", 11)
+        .attr("font-family", "var(--mono)")
+        .text("Optimal Zone");
+
+      g.selectAll(".scatter-grid-x")
+        .data(d3.range(1, 11))
+        .join("line")
+        .attr("class", "grid-line")
+        .attr("x1", (d) => x(d))
+        .attr("x2", (d) => x(d))
+        .attr("y1", 0)
+        .attr("y2", innerHeight)
+        .attr("stroke-dasharray", "3,9");
+
+      g.selectAll(".scatter-grid-y")
+        .data(y.ticks(5))
+        .join("line")
+        .attr("class", "grid-line")
+        .attr("x1", 0)
+        .attr("x2", innerWidth)
+        .attr("y1", (d) => y(d))
+        .attr("y2", (d) => y(d))
+        .attr("stroke-dasharray", "3,9");
+
+      g.append("g")
+        .attr("class", "axis")
+        .attr("transform", `translate(0, ${innerHeight})`)
+        .call(d3.axisBottom(x).ticks(10));
+      g.append("g")
+        .attr("class", "axis")
+        .call(d3.axisLeft(y).ticks(5));
+
+      g.append("text")
+        .attr("x", innerWidth / 2)
+        .attr("y", innerHeight + 38)
+        .attr("fill", "#94a3b8")
+        .attr("font-size", 11)
+        .attr("font-family", "var(--mono)")
+        .attr("text-anchor", "middle")
+        .text("Stress Level");
+
+      g.append("text")
+        .attr("x", -innerHeight / 2)
+        .attr("y", -40)
+        .attr("transform", "rotate(-90)")
+        .attr("fill", "#94a3b8")
+        .attr("font-size", 11)
+        .attr("font-family", "var(--mono)")
+        .attr("text-anchor", "middle")
+        .text("Accuracy Score");
+
+      teams.forEach((team) => {
+        const teamRows = data.filter((d) => d.team === team);
+        const regression = linearRegression(teamRows.map((row) => ({ x: row.stress_level, y: row.accuracy_score })));
+        if (!regression) return;
+
+        const domain = d3.extent(teamRows, (row) => row.stress_level);
+        const linePoints = [domain[0], domain[1]].map((value) => ({
+          x: value,
+          y: Math.max(0, Math.min(100, regression.intercept + regression.slope * value))
+        }));
+
+        g.append("path")
+          .datum(linePoints)
+          .attr("fill", "none")
+          .attr("stroke", TEAM_COLORS[team])
+          .attr("stroke-width", 2)
+          .attr("stroke-dasharray", "6,6")
+          .attr("opacity", teamOpacity(team))
+          .attr("d", d3.line().x((d) => x(d.x)).y((d) => y(d.y))(linePoints));
+      });
+
+      const points = g.selectAll(".scatter-point")
+        .data(data, (d) => d.event_id)
+        .join("path")
+        .attr("class", "scatter-point")
+        .attr("transform", (d) => `translate(${x(d.stress_level)}, ${y(d.accuracy_score)})`)
+        .attr("d", (d) => d3.symbol().type(DECISION_SHAPES[d.decision_type]).size(size(d.response_time_sec))())
+        .attr("fill", (d) => d3.color(TEAM_COLORS[d.team]).copy({ opacity: 0.72 }))
+        .attr("stroke", "rgba(226,232,240,0.72)")
+        .attr("stroke-width", 1)
+        .attr("opacity", 0)
+        .style("cursor", "pointer");
+
+      points.transition(transition).attr("opacity", (d) => teamOpacity(d.team));
+
+      points.on("mouseenter", (event, d) => {
+        showTooltip(
+          event,
+          `<strong>${d.event_id}</strong>
+           <div>Team: <span class="mono">${d.team}</span> | Day <span class="mono">${d.exercise_day}</span></div>
+           <div>Participant: <span class="mono">${d.participant_id}</span></div>
+           <div>Scenario: <span class="mono">${d.scenario}</span></div>
+           <div>Decision type: <span class="mono">${d.decision_type}</span></div>
+           <div>Accuracy: <span class="mono">${d.accuracy_score.toFixed(1)}%</span></div>
+           <div>Stress: <span class="mono">${d.stress_level.toFixed(1)}</span></div>
+           <div>Response time: <span class="mono">${d.response_time_sec.toFixed(1)}s</span></div>`
+        );
+      }).on("mousemove", moveTooltip)
+        .on("mouseleave", hideTooltip)
+        .on("click", (_, d) => openDrawer(`${d.event_id} · ${d.team}`, [d]));
+
+      const legend = document.getElementById("scatter-legend");
+      legend.innerHTML = `
+        <div class="shape-legend-left">
+          <span class="legend-label">
+            <svg class="shape-swatch" width="12" height="12" viewBox="0 0 12 12"><circle cx="6" cy="6" r="4" fill="#cbd5e1"></circle></svg>
+            Deliberate
+          </span>
+          <span class="legend-label">
+            <svg class="shape-swatch" width="12" height="12" viewBox="0 0 12 12"><path d="M6 1 L11 11 L1 11 Z" fill="#cbd5e1"></path></svg>
+            Time-Critical
+          </span>
+          <span class="legend-label">
+            <svg class="shape-swatch" width="12" height="12" viewBox="0 0 12 12"><rect x="2" y="2" width="8" height="8" fill="#cbd5e1"></rect></svg>
+            Collaborative
+          </span>
+        </div>
+        <div class="shape-legend-right">
+          <span class="legend-label">Dot size = response time</span>
+          <span class="legend-label">Dashed lines = team regression</span>
+        </div>
+      `;
+    }
+
+    /* =========================
+       CHARTS: ERROR STACK
+    ========================= */
+
+    /**
+     * Render the stacked error analysis chart.
+     * @param {object[]} data
+     */
+    function renderErrorAnalysis(data) {
+      const svg = d3.select("#error-chart");
+      const width = containerWidth("error-wrap");
+      const height = 370;
+      const margin = { top: 14, right: 18, bottom: 58, left: 56 };
+
+      if (!data.length) {
+        renderEmptySvg(svg, width, height, "No flagged-event composition is available for the current selection.");
+        document.getElementById("error-legend").innerHTML = "";
+        return;
+      }
+
+      svg.selectAll("*").remove();
+      svg.attr("viewBox", `0 0 ${width} ${height}`);
+
+      const groups = appState.errorMode === "exercise_day"
+        ? DAY_ORDER.map((day) => ({ key: day, label: `Day ${day}` }))
+        : SCENARIO_ORDER.filter((scenario) => appState.filters.scenario.has(scenario)).map((scenario) => ({ key: scenario, label: scenario }));
+
+      const summary = groups.map((group) => {
+        const rows = data.filter((d) =>
+          appState.errorMode === "exercise_day" ? d.exercise_day === group.key : d.scenario === group.key
+        );
+        return {
+          group: group.key,
+          label: group.label,
+          rows,
+          total: rows.length,
+          clean_events: rows.filter((d) => !d.any_flag).length,
+          information_overload_flag: rows.filter((d) => d.information_overload_flag).length,
+          communication_breakdown_flag: rows.filter((d) => d.communication_breakdown_flag).length,
+          fixation_error_flag: rows.filter((d) => d.fixation_error_flag).length
+        };
+      }).filter((d) => d.total > 0);
+
+      if (!summary.length) {
+        renderEmptySvg(svg, width, height, "No grouped rows remain for the selected error view.");
+        document.getElementById("error-legend").innerHTML = "";
+        return;
+      }
+
+      const innerWidth = width - margin.left - margin.right;
+      const innerHeight = height - margin.top - margin.bottom;
+      const x = d3.scaleBand().domain(summary.map((d) => d.group)).range([0, innerWidth]).padding(0.16);
+      const occurrenceMax = d3.max(summary, (d) =>
+        ERROR_SEGMENTS.reduce((sum, segment) => sum + d[segment.key], 0)
+      ) ?? 0;
+      const y = d3.scaleLinear().domain([0, occurrenceMax]).nice().range([innerHeight, 0]);
+      const g = svg.append("g").attr("transform", `translate(${margin.left}, ${margin.top})`);
+      const stack = d3.stack().keys(ERROR_SEGMENTS.map((segment) => segment.key))(summary);
+      const transition = d3.transition().duration(400).ease(d3.easeCubicOut);
+
+      g.selectAll(".error-grid")
+        .data(y.ticks(5))
+        .join("line")
+        .attr("class", "grid-line")
+        .attr("x1", 0)
+        .attr("x2", innerWidth)
+        .attr("y1", (d) => y(d))
+        .attr("y2", (d) => y(d))
+        .attr("stroke-dasharray", "4,8");
+
+      g.append("g")
+        .attr("class", "axis")
+        .attr("transform", `translate(0, ${innerHeight})`)
+        .call(
+          d3.axisBottom(x)
+            .tickFormat((d) => appState.errorMode === "exercise_day" ? `Day ${d}` : d.length > 16 ? `${d.slice(0, 14)}…` : d)
+        )
+        .selectAll("text")
+        .attr("transform", appState.errorMode === "scenario" ? "rotate(-18)" : null)
+        .style("text-anchor", appState.errorMode === "scenario" ? "end" : "middle");
+
+      g.append("g")
+        .attr("class", "axis")
+        .call(d3.axisLeft(y).ticks(5));
+
+      const layers = g.selectAll(".stack-layer")
+        .data(stack)
+        .join("g")
+        .attr("class", "stack-layer")
+        .attr("fill", (layer) => ERROR_SEGMENTS.find((segment) => segment.key === layer.key)?.color || "#cbd5e1");
+
+      layers.selectAll("rect")
+        .data((layer) => layer.map((segment) => ({ ...segment, key: layer.key, datum: segment.data })))
+        .join("rect")
+        .attr("x", (d) => x(d.data.group))
+        .attr("y", innerHeight)
+        .attr("width", x.bandwidth())
+        .attr("height", 0)
+        .style("cursor", "pointer")
+        .transition(transition)
+        .attr("y", (d) => y(d[1]))
+        .attr("height", (d) => Math.max(0, y(d[0]) - y(d[1])));
+
+      layers.selectAll("rect")
+        .on("mouseenter", (event, d) => {
+          const segmentLabel = ERROR_SEGMENTS.find((segment) => segment.key === d.key)?.label || d.key;
+          const count = d.datum[d.key];
+          const pct = d.datum.total ? (count / d.datum.total) * 100 : 0;
+          showTooltip(
+            event,
+            `<strong>${d.datum.label}</strong>
+             <div>${segmentLabel}: <span class="mono">${count}</span></div>
+             <div>Share of events: <span class="mono">${pct.toFixed(1)}%</span></div>
+             <div>Total events: <span class="mono">${d.datum.total}</span></div>`
+          );
+        })
+        .on("mousemove", moveTooltip)
+        .on("mouseleave", hideTooltip)
+        .on("click", (_, d) => {
+          const subset = d.key === "clean_events"
+            ? d.datum.rows.filter((row) => !row.any_flag)
+            : d.datum.rows.filter((row) => row[d.key]);
+          openDrawer(`${d.datum.label} · ${ERROR_SEGMENTS.find((segment) => segment.key === d.key)?.label}`, subset);
+        });
+
+      const legend = document.getElementById("error-legend");
+      legend.innerHTML = "";
+      ERROR_SEGMENTS.forEach((segment) => {
+        const chip = document.createElement("div");
+        chip.className = "legend-label";
+        chip.innerHTML = `<span class="legend-swatch" style="--legend-color:${segment.color}"></span>${segment.label}`;
+        legend.appendChild(chip);
+      });
+      const note = document.createElement("div");
+      note.className = "legend-label";
+      note.textContent = "Multi-flag events contribute to each applicable error segment.";
+      legend.appendChild(note);
+    }
+
+    /* =========================
+       WRITTEN FINDINGS SECTION
+    ========================= */
+
+    /**
+     * Render the key findings briefing cards.
+     * @param {object[]} data
+     */
+    function renderFindings(data) {
+      const grid = d3.select("#findings-grid");
+      grid.html("");
+
+      if (!data.length) {
+        grid.html(`<div class="no-data" style="grid-column:1 / -1;">No findings available because the filtered dataset is empty.</div>`);
+        return;
+      }
+
+      const teamAccuracy = TEAM_ORDER.map((team) => {
+        const rows = data.filter((d) => d.team === team);
+        return {
+          team,
+          accuracy: rows.length ? (d3.mean(rows, (d) => d.accuracy_score) ?? 0) : null
+        };
+      }).filter((d) => d.accuracy != null);
+      const rankedTeams = [...teamAccuracy].sort((a, b) => b.accuracy - a.accuracy);
+      const topTeam = rankedTeams[0];
+      const bottomTeam = rankedTeams[rankedTeams.length - 1];
+
+      const dayErrorRates = DAY_ORDER.map((day) => {
+        const rows = data.filter((d) => d.exercise_day === day);
+        return { day, rate: calcAnyFlagRate(rows), rows };
+      }).filter((d) => d.rows.length);
+      const worstDay = [...dayErrorRates].sort((a, b) => b.rate - a.rate)[0];
+
+      const domainAccuracy = DOMAIN_ORDER.map((domain) => {
+        const rows = data.filter((d) => d.cognitive_domain === domain);
+        return { domain, accuracy: rows.length ? (d3.mean(rows, (d) => d.accuracy_score) ?? 0) : null };
+      }).filter((d) => d.accuracy != null);
+      const weakestDomain = [...domainAccuracy].sort((a, b) => a.accuracy - b.accuracy)[0];
+
+      const deliberateRows = data.filter((d) => d.decision_type === "Deliberate");
+      const timeCriticalRows = data.filter((d) => d.decision_type === "Time-Critical");
+      const deliberateMean = d3.mean(deliberateRows, (d) => d.accuracy_score) ?? 0;
+      const timeCriticalMean = d3.mean(timeCriticalRows, (d) => d.accuracy_score) ?? 0;
+      const decisionDelta = deliberateMean ? ((timeCriticalMean - deliberateMean) / deliberateMean) * 100 : 0;
+
+      const stressCorrelation = correlation(
+        data.map((d) => d.stress_level),
+        data.map((d) => d.accuracy_score)
+      );
+      const correlationDirection = Math.abs(stressCorrelation) < 0.1
+        ? "none"
+        : stressCorrelation > 0
+          ? "positive"
+          : "negative";
+
+      const findings = [
+        {
+          kicker: "Team Spread",
+          title: `${topTeam.team} leads; ${bottomTeam.team} trails overall`,
+          text: `${topTeam.team} posts the best filtered accuracy at ${topTeam.accuracy.toFixed(1)}%, while ${bottomTeam.team} sits lowest at ${bottomTeam.accuracy.toFixed(1)}%.`,
+          renderChart: (svg) => renderMiniBars(svg, rankedTeams.map((d) => ({ label: d.team, value: d.accuracy, color: TEAM_COLORS[d.team] })))
+        },
+        {
+          kicker: "Error Peak",
+          title: `Day ${worstDay.day} shows the highest flag rate`,
+          text: `Day ${worstDay.day} carries the worst error incidence in the filtered slice, with ${worstDay.rate.toFixed(1)}% of events carrying at least one flagged issue.`,
+          renderChart: (svg) => renderMiniLine(svg, dayErrorRates.map((d) => ({ x: d.day, value: d.rate })), "#ef4444")
+        },
+        {
+          kicker: "Cognitive Weakness",
+          title: `${weakestDomain.domain} is the lowest-scoring domain`,
+          text: `${weakestDomain.domain} averages ${weakestDomain.accuracy.toFixed(1)}% accuracy, making it the weakest cognitive domain in the current view.`,
+          renderChart: (svg) => renderMiniBars(svg, domainAccuracy.map((d) => ({ label: d.domain, value: d.accuracy, color: d.domain === weakestDomain.domain ? "#ef4444" : "#00d4ff" })))
+        },
+        {
+          kicker: "Decision Tempo",
+          title: `Time-Critical decisions are ${Math.abs(decisionDelta).toFixed(1)}% ${decisionDelta <= 0 ? "lower" : "higher"}`,
+          text: `Compared with Deliberate decisions (${deliberateMean.toFixed(1)}%), Time-Critical decisions average ${timeCriticalMean.toFixed(1)}% accuracy in the filtered dataset.`,
+          renderChart: (svg) => renderMiniBars(svg, [
+            { label: "Deliberate", value: deliberateMean, color: "#10b981" },
+            { label: "Time-Critical", value: timeCriticalMean, color: "#f59e0b" }
+          ])
+        },
+        {
+          kicker: "Stress Signal",
+          title: `Stress/accuracy correlation is ${correlationDirection}`,
+          text: `The simple correlation between stress and accuracy is ${stressCorrelation.toFixed(2)}, indicating a ${correlationDirection === "none" ? "limited" : correlationDirection} relationship in this filtered view.`,
+          renderChart: (svg) => renderCorrelationGauge(svg, stressCorrelation)
+        }
+      ];
+
+      findings.forEach((finding) => {
+        const card = grid.append("article").attr("class", "finding-card");
+        card.html(`
+          <div class="finding-kicker">${finding.kicker}</div>
+          <h3 class="finding-title">${finding.title}</h3>
+          <p class="finding-text">${finding.text}</p>
+          <svg class="finding-chart"></svg>
+        `);
+        finding.renderChart(card.select("svg"));
+      });
+    }
+
+    /**
+     * Render a small bar chart for a finding card.
+     * @param {d3.Selection<SVGSVGElement, unknown, null, undefined>} svg
+     * @param {{label:string,value:number,color:string}[]} data
+     */
+    function renderMiniBars(svg, data) {
+      const width = 180;
+      const height = 54;
+      const margin = { top: 6, right: 6, bottom: 16, left: 6 };
+      const x = d3.scaleBand().domain(data.map((d) => d.label)).range([margin.left, width - margin.right]).padding(0.18);
+      const y = d3.scaleLinear().domain([0, d3.max(data, (d) => d.value) ?? 0]).nice().range([height - margin.bottom, margin.top]);
+      svg.selectAll("*").remove();
+      svg.attr("viewBox", `0 0 ${width} ${height}`);
+      svg.selectAll("rect")
+        .data(data)
+        .join("rect")
+        .attr("x", (d) => x(d.label))
+        .attr("y", (d) => y(d.value))
+        .attr("width", x.bandwidth())
+        .attr("height", (d) => height - margin.bottom - y(d.value))
+        .attr("fill", (d) => d.color)
+        .attr("opacity", 0.9);
+      svg.selectAll("text")
+        .data(data)
+        .join("text")
+        .attr("x", (d) => (x(d.label) ?? 0) + x.bandwidth() / 2)
+        .attr("y", height - 2)
+        .attr("fill", "#94a3b8")
+        .attr("font-size", 8)
+        .attr("text-anchor", "middle")
+        .text((d) => d.label.length > 10 ? `${d.label.slice(0, 8)}…` : d.label);
+    }
+
+    /**
+     * Render a sparkline-style mini line chart for a finding card.
+     * @param {d3.Selection<SVGSVGElement, unknown, null, undefined>} svg
+     * @param {{x:number,value:number}[]} data
+     * @param {string} color
+     */
+    function renderMiniLine(svg, data, color) {
+      renderSparkline(svg, data.map((d) => ({ day: d.x, value: d.value })), color);
+    }
+
+    /**
+     * Render a simple correlation gauge for a finding card.
+     * @param {d3.Selection<SVGSVGElement, unknown, null, undefined>} svg
+     * @param {number} value
+     */
+    function renderCorrelationGauge(svg, value) {
+      const width = 180;
+      const height = 54;
+      const x = d3.scaleLinear().domain([-1, 1]).range([10, width - 10]);
+      svg.selectAll("*").remove();
+      svg.attr("viewBox", `0 0 ${width} ${height}`);
+      svg.append("line")
+        .attr("x1", x(-1))
+        .attr("x2", x(1))
+        .attr("y1", height / 2)
+        .attr("y2", height / 2)
+        .attr("stroke", "rgba(148,163,184,0.3)")
+        .attr("stroke-width", 6)
+        .attr("stroke-linecap", "round");
+      svg.append("line")
+        .attr("x1", x(0))
+        .attr("x2", x(value))
+        .attr("y1", height / 2)
+        .attr("y2", height / 2)
+        .attr("stroke", value >= 0 ? "#10b981" : "#ef4444")
+        .attr("stroke-width", 6)
+        .attr("stroke-linecap", "round");
+      svg.append("circle")
+        .attr("cx", x(value))
+        .attr("cy", height / 2)
+        .attr("r", 6)
+        .attr("fill", value >= 0 ? "#10b981" : "#ef4444");
+      svg.append("text")
+        .attr("x", x(-1))
+        .attr("y", height - 6)
+        .attr("fill", "#94a3b8")
+        .attr("font-size", 9)
+        .text("-1");
+      svg.append("text")
+        .attr("x", x(0))
+        .attr("y", height - 6)
+        .attr("fill", "#94a3b8")
+        .attr("font-size", 9)
+        .attr("text-anchor", "middle")
+        .text("0");
+      svg.append("text")
+        .attr("x", x(1))
+        .attr("y", height - 6)
+        .attr("fill", "#94a3b8")
+        .attr("font-size", 9)
+        .attr("text-anchor", "end")
+        .text("+1");
+    }
+
+    /* =========================
+       FILTERS
+    ========================= */
+
+    /**
+     * Render the left sidebar filter controls.
+     */
+    function renderFilters() {
+      const container = d3.select("#filter-groups");
+      container.html("");
+
+      const groups = [
+        {
+          key: "team",
+          label: "Team",
+          meta: `${TEAM_ORDER.length} teams`,
+          values: TEAM_ORDER,
+          className: "team-pill"
+        },
+        {
+          key: "exercise_day",
+          label: "Exercise Day",
+          meta: "1-5",
+          values: DAY_ORDER
+        },
+        {
+          key: "scenario",
+          label: "Scenario",
+          meta: `${SCENARIO_ORDER.length} options`,
+          values: SCENARIO_ORDER
+        },
+        {
+          key: "phase",
+          label: "Phase",
+          meta: `${PHASE_ORDER.length} phases`,
+          values: PHASE_ORDER
+        },
+        {
+          key: "decision_type",
+          label: "Decision Type",
+          meta: `${DECISION_ORDER.length} tempos`,
+          values: DECISION_ORDER
+        }
+      ];
+
+      groups.forEach((groupConfig) => {
+        const group = container.append("div").attr("class", "filter-group");
+        group.html(`
+          <div class="filter-label">
+            <span>${groupConfig.label}</span>
+            <span class="filter-meta">${groupConfig.meta}</span>
+          </div>
+          <div class="pill-grid"></div>
+        `);
+
+        const grid = group.select(".pill-grid");
+        groupConfig.values.forEach((value) => {
+          const button = grid.append("button")
+            .attr("type", "button")
+            .attr("class", `pill-btn ${groupConfig.className || ""} ${appState.filters[groupConfig.key].has(value) ? "active" : ""}`)
+            .attr("style", groupConfig.key === "team" ? `--team-color:${TEAM_COLORS[value]}` : null)
+            .text(groupConfig.key === "team" ? `${value} (${rosterByTeam.get(value) ?? 0})` : value)
+            .on("click", () => {
+              const targetSet = appState.filters[groupConfig.key];
+              if (targetSet.has(value)) {
+                targetSet.delete(value);
+              } else {
+                targetSet.add(value);
+              }
+              renderAll();
+            });
+
+          if (groupConfig.key === "team" && appState.highlightTeam && appState.highlightTeam !== value) {
+            button.style("opacity", 0.6);
+          }
+        });
+      });
+
+      document.getElementById("roster-summary").textContent =
+        `${rosterData.length} personnel across ${TEAM_ORDER.length} teams.`;
+    }
+
+    /* =========================
+       AI PANEL
+    ========================= */
+
+    /**
+     * Render the AI analyst exchange history.
+     */
+    function renderAiHistory() {
+      const container = document.getElementById("ai-history");
+      container.innerHTML = "";
+
+      const entries = [...appState.aiHistory];
+      if (appState.loadingInsight) {
+        entries.unshift({
+          question: appState.liveQuestion,
+          answer: appState.liveInsight,
+          loading: true
+        });
+      }
+
+      if (!entries.length) {
+        const wrapper = document.createElement("div");
+        wrapper.className = "terminal-entry";
+        const q = document.createElement("p");
+        q.className = "terminal-question";
+        q.textContent = "Q> Awaiting analyst query.";
+        const a = document.createElement("pre");
+        a.className = "terminal-answer";
+        a.textContent = "The AI analyst panel will summarize the currently filtered exercise slice and answer from that live context.";
+        wrapper.append(q, a);
+        container.appendChild(wrapper);
+        return;
+      }
+
+      entries.slice(0, 3).forEach((entry, index) => {
+        const wrapper = document.createElement("div");
+        wrapper.className = `terminal-entry ${entry.loading ? "loading" : ""}`;
+        const question = document.createElement("p");
+        question.className = "terminal-question";
+        question.textContent = `Q> ${entry.question}`;
+
+        const answer = document.createElement("pre");
+        answer.className = "terminal-answer";
+        answer.textContent = entry.answer || "";
+
+        if (entry.loading) {
+          const cursor = document.createElement("span");
+          cursor.className = "cursor";
+          answer.appendChild(cursor);
+        }
+
+        wrapper.append(question, answer);
+
+        if (index < Math.min(entries.length, 3) - 1) {
+          const divider = document.createElement("div");
+          divider.className = "terminal-divider";
+          wrapper.appendChild(divider);
+        }
+
+        container.appendChild(wrapper);
+      });
+    }
+
+    /**
+     * Issue an insight request based on the textarea or a quick prompt.
+     * @param {string=} presetQuestion
+     */
+    async function handleGenerateInsight(presetQuestion) {
+      const textarea = document.getElementById("ai-question");
+      const keyInput = document.getElementById("anthropic-key-input");
+      const question = (presetQuestion || textarea.value).trim();
+
+      if (!question) {
+        showToast("Enter a question for the AI analyst.");
+        return;
+      }
+
+      sessionStorage.setItem("exercise-dashboard-anthropic-key", keyInput.value);
+
+      const filtered = getFilteredData();
+      const context = buildInsightContext(filtered, question);
+
+      appState.loadingInsight = true;
+      appState.liveInsight = "";
+      appState.liveQuestion = question;
+      renderAiHistory();
+
+      try {
+        const answer = await fetchInsight(context, (text) => {
+          appState.liveInsight = text;
+          renderAiHistory();
+        });
+
+        appState.aiHistory.unshift({
+          question,
+          answer: answer || "No response returned."
+        });
+        appState.aiHistory = appState.aiHistory.slice(0, 3);
+        appState.loadingInsight = false;
+        appState.liveInsight = "";
+        renderAiHistory();
+      } catch (error) {
+        appState.loadingInsight = false;
+        appState.liveInsight = "";
+        appState.aiHistory.unshift({
+          question,
+          answer: `[ERROR]\n${error.message}`
+        });
+        appState.aiHistory = appState.aiHistory.slice(0, 3);
+        renderAiHistory();
+      }
+    }
+
+    /**
+     * Render the quick insight buttons.
+     */
+    function renderQuickButtons() {
+      const row = document.getElementById("quick-row");
+      row.innerHTML = "";
+      QUICK_INSIGHTS.forEach((prompt) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "quick-btn";
+        button.textContent = prompt;
+        button.addEventListener("click", () => {
+          document.getElementById("ai-question").value = prompt;
+          handleGenerateInsight(prompt);
+        });
+        row.appendChild(button);
+      });
+    }
+
+    /* =========================
+       EVENTS
+    ========================= */
+
+    /**
+     * Render or re-render the detail drawer from app state.
+     */
+    function renderDrawer() {
+      const drawer = document.getElementById("detail-drawer");
+      const backdrop = document.getElementById("drawer-backdrop");
+      drawer.classList.toggle("open", appState.drawer.open);
+      backdrop.classList.toggle("open", appState.drawer.open);
+      drawer.setAttribute("aria-hidden", String(!appState.drawer.open));
+
+      document.getElementById("drawer-title").textContent = appState.drawer.title || "Subset Detail";
+      document.getElementById("drawer-count").textContent = `${appState.drawer.rows.length} rows`;
+      document.getElementById("drawer-sort-label").textContent =
+        `Sorted by ${appState.drawer.sortKey.replaceAll("_", " ")} ${appState.drawer.sortDirection}`;
+
+      const head = document.getElementById("drawer-head");
+      const body = document.getElementById("drawer-body");
+      head.innerHTML = "";
+      body.innerHTML = "";
+
+      if (!appState.drawer.open) return;
+
+      const headerRow = document.createElement("tr");
+      RAW_FIELDS.forEach((field) => {
+        const th = document.createElement("th");
+        th.textContent = field;
+        th.addEventListener("click", () => {
+          if (appState.drawer.sortKey === field) {
+            appState.drawer.sortDirection = appState.drawer.sortDirection === "asc" ? "desc" : "asc";
+          } else {
+            appState.drawer.sortKey = field;
+            appState.drawer.sortDirection = field === "timestamp" ? "desc" : "asc";
+          }
+          renderDrawer();
+        });
+        headerRow.appendChild(th);
+      });
+      head.appendChild(headerRow);
+
+      getSortedDrawerRows().forEach((row) => {
+        const tr = document.createElement("tr");
+        RAW_FIELDS.forEach((field) => {
+          const td = document.createElement("td");
+          const rawValue = getRawFieldValue(row, field);
+          td.textContent = rawValue;
+          tr.appendChild(td);
+        });
+        body.appendChild(tr);
+      });
+    }
+
+    /**
+     * Render the entire dashboard from current state.
+     */
+    function renderAll() {
+      const filtered = getFilteredData();
+      if (appState.highlightTeam && !appState.filters.team.has(appState.highlightTeam)) {
+        appState.highlightTeam = null;
+      }
+
+      document.getElementById("filter-summary").textContent = buildFilterSummary(filtered);
+      renderFilters();
+      renderKpis(filtered);
+      renderRadar(filtered);
+      renderTimeline(filtered);
+      renderHeatmap(filtered);
+      renderScatter(filtered);
+      renderErrorAnalysis(filtered);
+      renderFindings(filtered);
+      renderAiHistory();
+
+      document.querySelectorAll("[data-error-mode]").forEach((button) => {
+        button.classList.toggle("active", button.dataset.errorMode === appState.errorMode);
+      });
+    }
+
+    /**
+     * Bind DOM event listeners for actions outside the chart-specific handlers.
+     */
+    function bindEvents() {
+      document.getElementById("reset-filters-btn").addEventListener("click", () => {
+        appState.filters = createDefaultFilters();
+        appState.highlightTeam = null;
+        appState.errorMode = "exercise_day";
+        renderAll();
+      });
+
+      document.getElementById("export-btn").addEventListener("click", () => {
+        const filtered = getFilteredData();
+        downloadTextFile("filtered_exercise_events.csv", rowsToCsv(filtered));
+        showToast(`Exported ${filtered.length} events as CSV.`);
+      });
+
+      document.getElementById("share-view-btn").addEventListener("click", async () => {
+        const hash = buildShareHash();
+        window.location.hash = hash;
+        const url = window.location.href;
+        try {
+          if (navigator.clipboard?.writeText) {
+            await navigator.clipboard.writeText(url);
+            showToast("Shareable view URL copied to clipboard.");
+          } else {
+            showToast("View state saved in the URL hash.");
+          }
+        } catch (error) {
+          showToast("View state saved in the URL hash.");
+        }
+      });
+
+      document.getElementById("drawer-close-btn").addEventListener("click", closeDrawer);
+      document.getElementById("drawer-backdrop").addEventListener("click", closeDrawer);
+
+      document.querySelectorAll("[data-error-mode]").forEach((button) => {
+        button.addEventListener("click", () => {
+          appState.errorMode = button.dataset.errorMode;
+          renderAll();
+        });
+      });
+
+      document.getElementById("generate-insight-btn").addEventListener("click", () => handleGenerateInsight());
+      document.getElementById("ai-question").addEventListener("keydown", (event) => {
+        if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
+          handleGenerateInsight();
+        }
+      });
+
+      const savedKey = sessionStorage.getItem("exercise-dashboard-anthropic-key");
+      if (savedKey) {
+        document.getElementById("anthropic-key-input").value = savedKey;
+      }
+
+      let resizeTimer = null;
+      window.addEventListener("resize", () => {
+        clearTimeout(resizeTimer);
+        resizeTimer = window.setTimeout(renderAll, 120);
+      });
+
+      window.addEventListener("hashchange", () => {
+        hydrateFromHash();
+        renderAll();
+      });
+    }
+
+    /**
+     * Initialize the dashboard.
+     */
+    function init() {
+      hydrateFromHash();
+      renderQuickButtons();
+      bindEvents();
+      renderAll();
+    }
+
+    init();
+  </script>
+</body>
+</html>

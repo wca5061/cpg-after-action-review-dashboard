@@ -1,0 +1,21 @@
+participant_id,team,role,experience_years
+P1001,Alpha,Team Lead,1
+P1002,Alpha,Analyst,12
+P1003,Alpha,Operator,5
+P1004,Alpha,Communications,4
+P1005,Bravo,Team Lead,3
+P1006,Bravo,Analyst,12
+P1007,Bravo,Operator,2
+P1008,Bravo,Communications,11
+P1009,Charlie,Team Lead,10
+P1010,Charlie,Analyst,7
+P1011,Charlie,Operator,1
+P1012,Charlie,Communications,1
+P1013,Delta,Team Lead,4
+P1014,Delta,Analyst,4
+P1015,Delta,Operator,9
+P1016,Delta,Communications,10
+P1017,Echo,Team Lead,9
+P1018,Echo,Analyst,4
+P1019,Echo,Operator,12
+P1020,Echo,Communications,11

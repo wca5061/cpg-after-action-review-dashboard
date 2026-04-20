@@ -1,0 +1,246 @@
+event_id,timestamp,exercise_day,team,participant_id,role,experience_years,scenario,phase,decision_type,cognitive_domain,accuracy_score,response_time_sec,confidence_rating,stress_level,communication_events,information_overload_flag,communication_breakdown_flag,fixation_error_flag
+E0101,2/11/2026 9:45,3,Alpha,P1003,Operator,5,Crisis Response,Planning,Deliberate,Risk Assessment,93.5,31.9,7.4,7.3,3,1,0,0
+E0059,2/10/2026 14:52,2,Bravo,P1006,Analyst,12,Humanitarian Assistance,Planning,Deliberate,Risk Assessment,96.8,43.6,8.8,4.5,1,0,0,0
+E0172,2/12/2026 10:40,4,Charlie,P1011,Operator,1,Convoy Security,Assessment,Deliberate,Resource Allocation,81.2,47.9,7.5,6.1,7,0,0,0
+E0174,2/12/2026 16:50,4,Charlie,P1009,Team Lead,10,Crisis Response,Assessment,Collaborative,Resource Allocation,89.2,32.2,7.5,5.9,12,0,0,0
+E0157,2/12/2026 7:53,4,Bravo,P1008,Communications,11,Joint Operations,Planning,Collaborative,Situational Awareness,98.4,14.7,7.4,3.3,3,0,0,1
+E0103,2/11/2026 21:44,3,Bravo,P1007,Operator,2,Area Defense,Planning,Time-Critical,Risk Assessment,74.2,10.9,4.8,8.3,4,1,0,0
+E0025,2/9/2026 15:52,1,Charlie,P1012,Communications,1,Area Defense,Planning,Deliberate,Risk Assessment,82.3,43.9,7.5,6,1,0,0,0
+E0009,2/9/2026 16:31,1,Alpha,P1003,Operator,5,Joint Operations,Planning,Collaborative,Situational Awareness,94.1,34,9.2,4.4,8,0,0,1
+E0024,2/9/2026 19:51,1,Charlie,P1012,Communications,1,Area Defense,Planning,Collaborative,Risk Assessment,75,31.2,4.8,6.3,10,0,0,1
+E0145,2/12/2026 10:49,4,Alpha,P1004,Communications,4,Humanitarian Assistance,Planning,Deliberate,Pattern Recognition,78.2,41.1,7.5,5.1,7,0,0,1
+E0074,2/10/2026 9:54,2,Delta,P1015,Operator,9,Reconnaissance,Planning,Deliberate,Pattern Recognition,70.3,56.1,5.5,5.7,8,0,0,0
+E0195,2/12/2026 13:17,4,Echo,P1020,Communications,11,Reconnaissance,Execution,Deliberate,Pattern Recognition,72.8,48.7,4.8,6.6,2,1,0,0
+E0115,2/11/2026 8:35,3,Bravo,P1005,Team Lead,3,Humanitarian Assistance,Assessment,Collaborative,Risk Assessment,60.6,37.4,6,3.7,12,0,0,0
+E0063,2/10/2026 13:47,2,Bravo,P1005,Team Lead,3,Convoy Security,Assessment,Time-Critical,Risk Assessment,91.9,31.4,7.8,5.3,5,0,1,0
+E0161,2/12/2026 8:31,4,Bravo,P1008,Communications,11,Crisis Response,Planning,Time-Critical,Pattern Recognition,85.5,11.1,5.8,9.6,10,0,0,0
+E0189,2/12/2026 19:52,4,Echo,P1019,Operator,12,Joint Operations,Planning,Deliberate,Pattern Recognition,84.1,54.8,7.4,5.3,1,0,0,0
+E0040,2/9/2026 15:36,1,Echo,P1018,Analyst,4,Convoy Security,Execution,Collaborative,Situational Awareness,57,34,2.5,6.4,11,1,0,0
+E0210,2/13/2026 14:54,5,Bravo,P1007,Operator,2,Reconnaissance,Planning,Deliberate,Resource Allocation,93.9,48,8.2,4.9,0,0,1,0
+E0176,2/12/2026 9:28,4,Delta,P1014,Analyst,4,Reconnaissance,Assessment,Deliberate,Resource Allocation,97.7,41.4,7.1,5.6,4,0,1,0
+E0190,2/12/2026 6:07,4,Echo,P1017,Team Lead,9,Convoy Security,Planning,Collaborative,Resource Allocation,81.9,39.7,6.6,1.4,11,0,0,0
+E0221,2/13/2026 19:50,5,Charlie,P1011,Operator,1,Humanitarian Assistance,Execution,Time-Critical,Pattern Recognition,68.6,16.6,5.1,10,0,0,0,0
+E0056,2/10/2026 20:26,2,Bravo,P1008,Communications,11,Convoy Security,Assessment,Collaborative,Communication,80,45.1,7.1,5.4,6,0,0,0
+E0060,2/10/2026 18:14,2,Bravo,P1008,Communications,11,Humanitarian Assistance,Execution,Time-Critical,Pattern Recognition,42.8,33.4,2.8,9.1,7,0,0,0
+E0053,2/10/2026 18:17,2,Alpha,P1004,Communications,4,Reconnaissance,Planning,Collaborative,Risk Assessment,64.8,40.5,5.6,6.4,6,0,0,0
+E0142,2/11/2026 20:33,3,Echo,P1018,Analyst,4,Crisis Response,Planning,Collaborative,Situational Awareness,75.7,36.4,5.9,6,8,0,0,0
+E0055,2/10/2026 9:54,2,Alpha,P1004,Communications,4,Reconnaissance,Execution,Deliberate,Risk Assessment,79,57.8,5.1,7.4,0,1,1,0
+E0107,2/11/2026 16:52,3,Bravo,P1007,Operator,2,Convoy Security,Planning,Deliberate,Communication,65.6,44.7,4.3,2.9,2,0,0,0
+E0122,2/11/2026 9:20,3,Charlie,P1011,Operator,1,Area Defense,Execution,Deliberate,Communication,87.6,47.4,7.8,6.7,5,1,0,0
+E0042,2/9/2026 10:27,1,Echo,P1017,Team Lead,9,Humanitarian Assistance,Execution,Collaborative,Resource Allocation,85.2,38.8,8.2,6.4,5,0,0,0
+E0062,2/10/2026 8:54,2,Bravo,P1007,Operator,2,Joint Operations,Execution,Collaborative,Resource Allocation,67.9,34,7,4.3,6,0,0,0
+E0178,2/12/2026 6:45,4,Delta,P1014,Analyst,4,Joint Operations,Execution,Deliberate,Resource Allocation,87.2,48.8,8.1,6.4,0,0,0,0
+E0213,2/13/2026 20:51,5,Bravo,P1007,Operator,2,Convoy Security,Planning,Time-Critical,Pattern Recognition,94.2,31.6,8.3,7,7,1,0,0
+E0152,2/12/2026 8:34,4,Alpha,P1003,Operator,5,Convoy Security,Assessment,Deliberate,Risk Assessment,92.7,44.2,7.1,5,8,0,0,0
+E0038,2/9/2026 21:01,1,Delta,P1016,Communications,10,Reconnaissance,Execution,Deliberate,Situational Awareness,61.9,58,4.8,9.3,3,1,0,1
+E0133,2/11/2026 18:57,3,Delta,P1015,Operator,9,Convoy Security,Execution,Collaborative,Communication,91.3,30.8,9.3,7.6,7,0,0,0
+E0132,2/11/2026 15:49,3,Delta,P1014,Analyst,4,Joint Operations,Execution,Deliberate,Pattern Recognition,60.2,57.4,5.7,7.6,1,0,0,0
+E0090,2/10/2026 13:06,2,Echo,P1018,Analyst,4,Humanitarian Assistance,Execution,Collaborative,Pattern Recognition,87.4,37,7.8,6.1,5,0,0,0
+E0166,2/12/2026 17:48,4,Charlie,P1009,Team Lead,10,Convoy Security,Planning,Deliberate,Resource Allocation,100,41.5,8.9,6.6,7,0,0,1
+E0097,2/11/2026 17:01,3,Alpha,P1001,Team Lead,1,Crisis Response,Assessment,Deliberate,Communication,81.3,53.7,7.3,8.9,2,1,1,0
+E0111,2/11/2026 20:02,3,Bravo,P1008,Communications,11,Crisis Response,Planning,Deliberate,Risk Assessment,75.1,35,5.5,5.6,1,1,0,0
+E0160,2/12/2026 15:43,4,Bravo,P1008,Communications,11,Area Defense,Assessment,Collaborative,Pattern Recognition,90.8,34.3,7.2,7.6,8,1,0,0
+E0048,2/10/2026 20:21,2,Alpha,P1001,Team Lead,1,Humanitarian Assistance,Assessment,Deliberate,Resource Allocation,83.4,50,7.2,7.7,3,0,0,1
+E0170,2/12/2026 21:20,4,Charlie,P1010,Analyst,7,Humanitarian Assistance,Execution,Collaborative,Pattern Recognition,76.8,40.5,7.3,7.7,12,0,0,0
+E0093,2/10/2026 16:38,2,Echo,P1017,Team Lead,9,Joint Operations,Execution,Collaborative,Pattern Recognition,70.6,39.5,6.3,8.2,10,0,0,0
+E0114,2/11/2026 15:44,3,Bravo,P1007,Operator,2,Reconnaissance,Assessment,Time-Critical,Communication,67.6,31.9,5.1,9.1,8,0,0,0
+E0072,2/10/2026 9:15,2,Delta,P1013,Team Lead,4,Humanitarian Assistance,Planning,Deliberate,Situational Awareness,85.7,51.3,6.8,3.6,5,0,0,0
+E0008,2/9/2026 14:32,1,Alpha,P1003,Operator,5,Area Defense,Execution,Deliberate,Situational Awareness,85.3,48.9,5.9,9.1,7,0,0,0
+E0006,2/9/2026 18:23,1,Alpha,P1003,Operator,5,Joint Operations,Assessment,Deliberate,Communication,88.1,52.3,10,5.7,4,1,0,0
+E0242,2/13/2026 18:37,5,Echo,P1020,Communications,11,Area Defense,Execution,Deliberate,Risk Assessment,66,63.9,6.2,7,0,0,0,0
+E0051,2/10/2026 7:14,2,Alpha,P1004,Communications,4,Joint Operations,Assessment,Deliberate,Risk Assessment,77.6,57.7,6.7,4.7,4,0,0,0
+E0001,2/9/2026 6:48,1,Alpha,P1004,Communications,4,Reconnaissance,Planning,Collaborative,Risk Assessment,80.3,24.3,6.4,5.6,11,1,0,0
+E0073,2/10/2026 19:17,2,Delta,P1014,Analyst,4,Crisis Response,Execution,Time-Critical,Resource Allocation,68.7,25.2,3.4,10,5,0,0,0
+E0139,2/11/2026 19:32,3,Echo,P1018,Analyst,4,Joint Operations,Planning,Collaborative,Resource Allocation,72.2,45.5,8.4,8.2,1,1,0,0
+E0208,2/13/2026 18:04,5,Bravo,P1005,Team Lead,3,Convoy Security,Assessment,Collaborative,Pattern Recognition,93.3,29.6,7.6,5.9,7,0,0,0
+E0045,2/9/2026 13:25,1,Echo,P1020,Communications,11,Convoy Security,Execution,Time-Critical,Risk Assessment,60.4,18.7,4,8.5,1,0,0,0
+E0070,2/10/2026 17:05,2,Charlie,P1010,Analyst,7,Crisis Response,Assessment,Collaborative,Resource Allocation,95.6,31.7,7.8,4.8,7,0,0,0
+E0032,2/9/2026 20:03,1,Delta,P1013,Team Lead,4,Area Defense,Execution,Time-Critical,Communication,55.6,9.3,3.8,10,5,0,0,0
+E0200,2/13/2026 7:19,5,Alpha,P1002,Analyst,12,Reconnaissance,Planning,Time-Critical,Resource Allocation,85.3,14.7,5.8,6.7,4,1,1,0
+E0206,2/13/2026 13:34,5,Alpha,P1002,Analyst,12,Convoy Security,Planning,Deliberate,Situational Awareness,100,33.3,9.9,7.8,0,1,0,0
+E0011,2/9/2026 20:57,1,Alpha,P1003,Operator,5,Crisis Response,Execution,Collaborative,Risk Assessment,65.7,39.8,5.6,9.5,6,1,0,0
+E0212,2/13/2026 7:53,5,Bravo,P1008,Communications,11,Area Defense,Planning,Time-Critical,Situational Awareness,86.7,21.5,6.5,7,7,0,0,1
+E0188,2/12/2026 17:29,4,Echo,P1017,Team Lead,9,Joint Operations,Execution,Collaborative,Risk Assessment,80.2,42.7,6.4,10,8,0,0,0
+E0203,2/13/2026 21:23,5,Alpha,P1001,Team Lead,1,Convoy Security,Planning,Time-Critical,Situational Awareness,81.1,24.5,8.6,7,0,0,0,0
+E0245,2/13/2026 21:58,5,Echo,P1018,Analyst,4,Crisis Response,Execution,Collaborative,Pattern Recognition,85.9,31.5,7,9.2,6,1,0,0
+E0197,2/12/2026 10:24,4,Echo,P1017,Team Lead,9,Convoy Security,Assessment,Deliberate,Risk Assessment,95.8,35.8,7,6.8,5,0,1,1
+E0214,2/13/2026 11:22,5,Bravo,P1008,Communications,11,Convoy Security,Execution,Deliberate,Resource Allocation,91.6,46.7,8.3,7,10,1,0,0
+E0068,2/10/2026 15:50,2,Charlie,P1010,Analyst,7,Convoy Security,Assessment,Collaborative,Situational Awareness,91.3,22.8,8.1,5.8,7,0,0,0
+E0026,2/9/2026 9:56,1,Charlie,P1012,Communications,1,Joint Operations,Assessment,Deliberate,Situational Awareness,92.3,50.2,7.6,6.2,3,1,0,0
+E0153,2/12/2026 6:13,4,Alpha,P1002,Analyst,12,Area Defense,Execution,Deliberate,Risk Assessment,100,34.1,10,10,2,0,0,0
+E0140,2/11/2026 6:16,3,Echo,P1019,Operator,12,Humanitarian Assistance,Execution,Collaborative,Communication,78,29.6,5.2,7.6,9,0,0,0
+E0095,2/11/2026 15:16,3,Alpha,P1003,Operator,5,Joint Operations,Planning,Collaborative,Resource Allocation,78.2,25,8.2,4.5,6,1,0,0
+E0194,2/12/2026 10:58,4,Echo,P1018,Analyst,4,Humanitarian Assistance,Execution,Collaborative,Pattern Recognition,67.7,29.3,6.4,7.7,7,1,0,0
+E0233,2/13/2026 18:35,5,Delta,P1015,Operator,9,Crisis Response,Execution,Time-Critical,Situational Awareness,68.8,27.9,5.6,10,8,0,0,0
+E0066,2/10/2026 12:24,2,Charlie,P1012,Communications,1,Humanitarian Assistance,Assessment,Deliberate,Risk Assessment,77.1,53.9,6,4.8,6,0,0,1
+E0100,2/11/2026 20:49,3,Alpha,P1002,Analyst,12,Crisis Response,Execution,Collaborative,Resource Allocation,73.6,36.4,7.1,5.3,7,0,0,1
+E0109,2/11/2026 9:51,3,Bravo,P1007,Operator,2,Crisis Response,Planning,Deliberate,Risk Assessment,65,69.1,5.3,2.8,0,0,0,0
+E0018,2/9/2026 13:16,1,Bravo,P1007,Operator,2,Area Defense,Execution,Collaborative,Risk Assessment,61.8,32,6.1,7.4,10,0,0,0
+E0078,2/10/2026 9:31,2,Delta,P1013,Team Lead,4,Reconnaissance,Planning,Deliberate,Resource Allocation,51.1,60.5,3.2,6.2,2,1,1,0
+E0138,2/11/2026 9:21,3,Echo,P1018,Analyst,4,Reconnaissance,Assessment,Deliberate,Pattern Recognition,89.7,51,8.4,5.3,6,0,0,0
+E0230,2/13/2026 13:53,5,Delta,P1013,Team Lead,4,Reconnaissance,Execution,Deliberate,Risk Assessment,81.9,49.3,7.2,7.7,0,1,0,0
+E0013,2/9/2026 17:27,1,Alpha,P1004,Communications,4,Convoy Security,Planning,Time-Critical,Resource Allocation,52.5,35,5.7,8.2,3,0,0,1
+E0211,2/13/2026 17:25,5,Bravo,P1007,Operator,2,Convoy Security,Planning,Collaborative,Pattern Recognition,72.1,37.4,5.8,9.8,11,0,0,0
+E0201,2/13/2026 11:23,5,Alpha,P1003,Operator,5,Joint Operations,Assessment,Collaborative,Risk Assessment,99.9,40,8.1,8,8,0,0,1
+E0154,2/12/2026 17:19,4,Alpha,P1003,Operator,5,Reconnaissance,Execution,Deliberate,Communication,82.7,48.6,8.1,7.6,4,0,0,0
+E0185,2/12/2026 17:55,4,Delta,P1013,Team Lead,4,Convoy Security,Execution,Time-Critical,Pattern Recognition,67.8,12.8,5.9,10,5,1,0,0
+E0177,2/12/2026 11:35,4,Delta,P1013,Team Lead,4,Area Defense,Assessment,Collaborative,Pattern Recognition,92.8,40.8,8.4,5.3,6,0,0,1
+E0020,2/9/2026 10:16,1,Bravo,P1005,Team Lead,3,Joint Operations,Assessment,Deliberate,Situational Awareness,92.3,48.1,8,4.5,3,0,0,0
+E0061,2/10/2026 16:55,2,Bravo,P1006,Analyst,12,Convoy Security,Execution,Time-Critical,Communication,80.8,30.6,8.5,10,6,0,0,1
+E0228,2/13/2026 10:03,5,Delta,P1013,Team Lead,4,Joint Operations,Execution,Collaborative,Resource Allocation,79.8,30.6,7.5,6.9,12,0,0,1
+E0180,2/12/2026 16:07,4,Delta,P1015,Operator,9,Joint Operations,Assessment,Time-Critical,Pattern Recognition,63.4,24.9,5.8,7,5,0,0,0
+E0181,2/12/2026 11:35,4,Delta,P1016,Communications,10,Reconnaissance,Planning,Collaborative,Communication,86.5,39.8,7.9,7.6,4,0,0,0
+E0167,2/12/2026 16:55,4,Charlie,P1011,Operator,1,Convoy Security,Assessment,Collaborative,Communication,77.5,41.1,6.1,6.3,13,0,0,0
+E0241,2/13/2026 11:38,5,Echo,P1017,Team Lead,9,Convoy Security,Assessment,Deliberate,Pattern Recognition,94.2,39,6,3.7,3,0,0,0
+E0179,2/12/2026 14:42,4,Delta,P1015,Operator,9,Area Defense,Execution,Deliberate,Situational Awareness,89.8,38.8,6.6,6.6,1,0,0,0
+E0183,2/12/2026 11:49,4,Delta,P1013,Team Lead,4,Area Defense,Execution,Collaborative,Risk Assessment,61.5,45,5.3,6,9,0,0,0
+E0151,2/12/2026 13:19,4,Alpha,P1004,Communications,4,Joint Operations,Planning,Deliberate,Pattern Recognition,88.3,43.4,7,5.8,1,0,0,0
+E0187,2/12/2026 13:09,4,Echo,P1019,Operator,12,Area Defense,Assessment,Collaborative,Pattern Recognition,76,22.6,6.4,3.9,4,0,0,0
+E0120,2/11/2026 14:41,3,Charlie,P1009,Team Lead,10,Convoy Security,Planning,Collaborative,Communication,80.8,38.3,8,5.6,7,0,0,0
+E0113,2/11/2026 10:33,3,Bravo,P1007,Operator,2,Reconnaissance,Execution,Time-Critical,Communication,58.1,30.7,4.4,10,6,0,0,1
+E0227,2/13/2026 19:10,5,Charlie,P1009,Team Lead,10,Crisis Response,Execution,Time-Critical,Communication,87.6,22.6,8.3,9.6,0,0,0,0
+E0226,2/13/2026 18:10,5,Charlie,P1011,Operator,1,Convoy Security,Planning,Deliberate,Pattern Recognition,94.8,43,6.6,6.6,3,0,0,0
+E0128,2/11/2026 9:26,3,Delta,P1015,Operator,9,Convoy Security,Execution,Deliberate,Risk Assessment,85.1,35.9,6.2,7,0,1,0,0
+E0141,2/11/2026 17:39,3,Echo,P1019,Operator,12,Convoy Security,Assessment,Collaborative,Risk Assessment,80.2,55.7,5.6,6.3,11,0,0,0
+E0007,2/9/2026 20:33,1,Alpha,P1004,Communications,4,Convoy Security,Assessment,Deliberate,Resource Allocation,74.2,63,7.6,5.8,9,0,0,0
+E0215,2/13/2026 7:05,5,Bravo,P1007,Operator,2,Reconnaissance,Execution,Collaborative,Resource Allocation,83.7,39.2,7.6,9.5,4,0,0,0
+E0069,2/10/2026 14:53,2,Charlie,P1010,Analyst,7,Humanitarian Assistance,Assessment,Collaborative,Communication,91.5,47.8,10,4.7,6,0,0,1
+E0147,2/12/2026 20:22,4,Alpha,P1004,Communications,4,Reconnaissance,Assessment,Time-Critical,Pattern Recognition,75.5,26.7,7.5,6.5,8,0,0,0
+E0033,2/9/2026 19:53,1,Delta,P1015,Operator,9,Joint Operations,Execution,Collaborative,Communication,70.9,33.9,7,10,3,0,0,0
+E0082,2/10/2026 9:36,2,Echo,P1017,Team Lead,9,Joint Operations,Execution,Deliberate,Risk Assessment,90.3,41.4,7.5,5,5,0,0,1
+E0130,2/11/2026 19:32,3,Delta,P1015,Operator,9,Area Defense,Execution,Deliberate,Pattern Recognition,69.3,57.7,3.6,9.7,0,1,1,0
+E0155,2/12/2026 13:47,4,Bravo,P1007,Operator,2,Reconnaissance,Execution,Time-Critical,Communication,73.7,27.7,7.3,8.6,3,0,0,0
+E0102,2/11/2026 7:25,3,Alpha,P1002,Analyst,12,Humanitarian Assistance,Execution,Time-Critical,Resource Allocation,92.9,13.4,7.7,9.8,4,1,0,0
+E0084,2/10/2026 8:47,2,Echo,P1020,Communications,11,Area Defense,Planning,Collaborative,Situational Awareness,68.9,31.7,5.6,4.5,9,0,0,0
+E0131,2/11/2026 16:11,3,Delta,P1015,Operator,9,Reconnaissance,Assessment,Collaborative,Resource Allocation,59.5,44.6,3.5,5.5,11,0,0,0
+E0238,2/13/2026 11:12,5,Echo,P1020,Communications,11,Joint Operations,Planning,Collaborative,Situational Awareness,82.8,39,6.4,5.8,8,1,0,0
+E0016,2/9/2026 7:37,1,Bravo,P1008,Communications,11,Area Defense,Planning,Deliberate,Pattern Recognition,74,52.7,5.8,5,5,0,0,0
+E0022,2/9/2026 7:53,1,Bravo,P1005,Team Lead,3,Convoy Security,Planning,Collaborative,Pattern Recognition,69.3,32.3,6.7,4.8,8,0,0,0
+E0065,2/10/2026 14:29,2,Charlie,P1012,Communications,1,Area Defense,Assessment,Time-Critical,Resource Allocation,69.7,24.6,6.5,4.9,3,0,0,0
+E0222,2/13/2026 10:11,5,Charlie,P1010,Analyst,7,Humanitarian Assistance,Execution,Collaborative,Risk Assessment,83.7,32.3,4.6,8.5,7,0,0,1
+E0127,2/11/2026 16:59,3,Delta,P1016,Communications,10,Joint Operations,Planning,Collaborative,Pattern Recognition,67.9,36.5,7.3,5.9,7,0,0,0
+E0124,2/11/2026 15:31,3,Charlie,P1010,Analyst,7,Humanitarian Assistance,Assessment,Time-Critical,Situational Awareness,79.3,9.1,5.5,6.9,2,1,1,1
+E0028,2/9/2026 16:42,1,Charlie,P1011,Operator,1,Convoy Security,Execution,Collaborative,Risk Assessment,71.5,45.9,4.7,7.7,10,0,0,0
+E0143,2/11/2026 9:43,3,Echo,P1018,Analyst,4,Humanitarian Assistance,Planning,Collaborative,Resource Allocation,82.5,45.4,7.9,6.1,9,0,0,1
+E0094,2/10/2026 11:23,2,Echo,P1018,Analyst,4,Reconnaissance,Assessment,Deliberate,Communication,74.7,48.1,6.8,4.6,5,0,0,0
+E0029,2/9/2026 11:39,1,Charlie,P1010,Analyst,7,Reconnaissance,Planning,Collaborative,Resource Allocation,81.6,32.1,7.2,4.6,9,0,0,0
+E0030,2/9/2026 8:18,1,Charlie,P1010,Analyst,7,Reconnaissance,Assessment,Collaborative,Pattern Recognition,97.2,19.6,8,4.1,13,0,0,0
+E0003,2/9/2026 13:55,1,Alpha,P1001,Team Lead,1,Area Defense,Assessment,Deliberate,Situational Awareness,86.8,51.4,6.6,4.8,3,0,0,0
+E0236,2/13/2026 14:53,5,Echo,P1019,Operator,12,Humanitarian Assistance,Planning,Deliberate,Risk Assessment,99.1,30,8.3,7.8,7,1,0,0
+E0243,2/13/2026 16:17,5,Echo,P1019,Operator,12,Convoy Security,Assessment,Deliberate,Situational Awareness,75,40.2,6.1,7.9,6,1,0,0
+E0156,2/12/2026 14:48,4,Bravo,P1008,Communications,11,Crisis Response,Assessment,Collaborative,Risk Assessment,84.6,43.7,4.7,4.9,5,0,0,0
+E0092,2/10/2026 15:04,2,Echo,P1020,Communications,11,Convoy Security,Execution,Time-Critical,Risk Assessment,50.7,13.3,2.1,10,6,0,0,0
+E0244,2/13/2026 6:41,5,Echo,P1020,Communications,11,Humanitarian Assistance,Assessment,Collaborative,Pattern Recognition,79.3,29.5,6.6,6,6,0,0,0
+E0198,2/13/2026 15:40,5,Alpha,P1002,Analyst,12,Convoy Security,Planning,Deliberate,Communication,78.8,47.7,4.9,4.8,5,0,0,0
+E0035,2/9/2026 20:26,1,Delta,P1014,Analyst,4,Reconnaissance,Planning,Deliberate,Risk Assessment,89.3,52.3,6.1,7.7,5,0,0,0
+E0171,2/12/2026 9:59,4,Charlie,P1011,Operator,1,Humanitarian Assistance,Execution,Deliberate,Risk Assessment,74.7,48.4,4.8,6.8,0,0,0,0
+E0087,2/10/2026 11:08,2,Echo,P1017,Team Lead,9,Reconnaissance,Planning,Collaborative,Resource Allocation,71.8,47,4.1,5.5,8,0,1,1
+E0135,2/11/2026 21:06,3,Echo,P1018,Analyst,4,Convoy Security,Planning,Deliberate,Risk Assessment,76.9,47.8,9.1,5.8,6,0,0,0
+E0134,2/11/2026 14:59,3,Delta,P1015,Operator,9,Reconnaissance,Assessment,Time-Critical,Pattern Recognition,76.9,16.3,6.1,8.8,7,1,0,0
+E0117,2/11/2026 16:41,3,Charlie,P1012,Communications,1,Joint Operations,Execution,Time-Critical,Pattern Recognition,71.8,27.1,5.5,9.4,6,0,0,1
+E0075,2/10/2026 12:37,2,Delta,P1014,Analyst,4,Area Defense,Assessment,Time-Critical,Communication,68.4,39.5,5.4,7.7,4,0,0,1
+E0204,2/13/2026 17:07,5,Alpha,P1004,Communications,4,Humanitarian Assistance,Assessment,Deliberate,Situational Awareness,83.3,31.8,6.9,7,9,0,0,1
+E0012,2/9/2026 13:17,1,Alpha,P1002,Analyst,12,Convoy Security,Planning,Deliberate,Situational Awareness,82.1,46.8,6.2,7.6,9,0,0,0
+E0017,2/9/2026 8:43,1,Bravo,P1005,Team Lead,3,Convoy Security,Assessment,Time-Critical,Situational Awareness,73.5,16.6,7.3,6.1,3,1,0,0
+E0043,2/9/2026 20:15,1,Echo,P1019,Operator,12,Area Defense,Execution,Time-Critical,Risk Assessment,63.3,14.2,4.8,9,1,0,0,0
+E0229,2/13/2026 9:19,5,Delta,P1014,Analyst,4,Humanitarian Assistance,Assessment,Time-Critical,Resource Allocation,87.1,11.5,7.9,6.2,2,0,0,0
+E0209,2/13/2026 20:17,5,Bravo,P1008,Communications,11,Crisis Response,Assessment,Deliberate,Risk Assessment,92.7,64.1,8.9,8,5,0,0,1
+E0165,2/12/2026 8:49,4,Charlie,P1010,Analyst,7,Joint Operations,Assessment,Collaborative,Resource Allocation,81.5,25.8,6.7,4.7,11,0,0,0
+E0027,2/9/2026 18:57,1,Charlie,P1011,Operator,1,Joint Operations,Execution,Collaborative,Situational Awareness,70.2,36.1,5.8,8.1,11,0,0,0
+E0173,2/12/2026 7:50,4,Charlie,P1012,Communications,1,Joint Operations,Assessment,Collaborative,Resource Allocation,90.8,30.3,8.1,3.6,9,0,0,0
+E0080,2/10/2026 19:46,2,Delta,P1014,Analyst,4,Humanitarian Assistance,Execution,Deliberate,Resource Allocation,50.7,69.7,4.8,7.7,1,1,0,1
+E0089,2/10/2026 19:37,2,Echo,P1019,Operator,12,Reconnaissance,Planning,Time-Critical,Pattern Recognition,65.5,26.1,6.6,6.4,5,1,0,0
+E0232,2/13/2026 12:51,5,Delta,P1014,Analyst,4,Reconnaissance,Planning,Time-Critical,Pattern Recognition,95.9,19.6,8.3,8.7,6,1,0,0
+E0064,2/10/2026 13:33,2,Charlie,P1011,Operator,1,Humanitarian Assistance,Execution,Deliberate,Pattern Recognition,80.1,40.1,7.5,8,6,0,0,0
+E0164,2/12/2026 18:49,4,Charlie,P1010,Analyst,7,Humanitarian Assistance,Planning,Collaborative,Communication,87,28.7,8.5,6.5,5,0,0,0
+E0005,2/9/2026 12:58,1,Alpha,P1001,Team Lead,1,Reconnaissance,Execution,Deliberate,Situational Awareness,93.2,39.1,7.2,9.2,0,0,0,0
+E0049,2/10/2026 8:15,2,Alpha,P1001,Team Lead,1,Area Defense,Planning,Collaborative,Risk Assessment,92.4,41.5,6.3,3.9,9,0,0,0
+E0205,2/13/2026 20:00,5,Alpha,P1004,Communications,4,Humanitarian Assistance,Execution,Deliberate,Situational Awareness,79.8,55.4,7,6.5,4,0,0,0
+E0083,2/10/2026 6:38,2,Echo,P1019,Operator,12,Area Defense,Assessment,Deliberate,Communication,96.2,37.1,7.9,5.8,3,0,1,0
+E0004,2/9/2026 20:24,1,Alpha,P1002,Analyst,12,Crisis Response,Assessment,Time-Critical,Pattern Recognition,76.3,20,8.6,7.6,2,0,0,1
+E0225,2/13/2026 18:06,5,Charlie,P1012,Communications,1,Reconnaissance,Execution,Deliberate,Communication,86.3,35.3,5.7,7.2,5,0,1,1
+E0199,2/13/2026 10:34,5,Alpha,P1001,Team Lead,1,Convoy Security,Execution,Collaborative,Pattern Recognition,84.5,44.1,7.2,5.7,6,0,0,0
+E0137,2/11/2026 15:56,3,Echo,P1018,Analyst,4,Reconnaissance,Planning,Deliberate,Pattern Recognition,88,48.6,5.5,4.2,2,0,0,0
+E0010,2/9/2026 21:35,1,Alpha,P1004,Communications,4,Joint Operations,Planning,Time-Critical,Pattern Recognition,67.6,28.8,6.7,5.6,0,0,0,0
+E0182,2/12/2026 19:43,4,Delta,P1016,Communications,10,Joint Operations,Assessment,Collaborative,Resource Allocation,62,28.8,5.2,5.6,9,0,0,0
+E0099,2/11/2026 17:43,3,Alpha,P1002,Analyst,12,Reconnaissance,Assessment,Time-Critical,Resource Allocation,73.1,5,4.8,6.3,4,0,0,0
+E0123,2/11/2026 16:12,3,Charlie,P1012,Communications,1,Area Defense,Planning,Deliberate,Communication,81.4,40.4,5.6,5.9,4,0,0,0
+E0169,2/12/2026 9:08,4,Charlie,P1012,Communications,1,Joint Operations,Assessment,Time-Critical,Resource Allocation,69.2,41.9,5.1,8.3,5,0,0,0
+E0104,2/11/2026 9:03,3,Bravo,P1008,Communications,11,Humanitarian Assistance,Planning,Time-Critical,Risk Assessment,70.1,24.2,7.3,6.5,3,0,0,0
+E0110,2/11/2026 19:38,3,Bravo,P1007,Operator,2,Crisis Response,Planning,Deliberate,Situational Awareness,94.2,49.5,7.8,6.1,5,0,0,0
+E0192,2/12/2026 13:33,4,Echo,P1017,Team Lead,9,Reconnaissance,Planning,Time-Critical,Pattern Recognition,91.6,19,7.5,6.5,0,0,0,1
+E0112,2/11/2026 7:08,3,Bravo,P1006,Analyst,12,Area Defense,Planning,Collaborative,Resource Allocation,70.1,51.6,6.6,4.3,10,0,0,0
+E0158,2/12/2026 21:42,4,Bravo,P1008,Communications,11,Convoy Security,Execution,Collaborative,Communication,85.9,33.3,7.2,8.3,8,0,0,0
+E0034,2/9/2026 8:45,1,Delta,P1016,Communications,10,Area Defense,Assessment,Deliberate,Resource Allocation,74.6,51.2,7,4.6,7,1,0,0
+E0235,2/13/2026 11:17,5,Delta,P1016,Communications,10,Joint Operations,Assessment,Deliberate,Situational Awareness,78,57.6,6.1,4.4,0,0,1,0
+E0126,2/11/2026 17:48,3,Delta,P1014,Analyst,4,Reconnaissance,Planning,Deliberate,Risk Assessment,82.7,56,8,5.8,4,1,0,0
+E0041,2/9/2026 9:50,1,Echo,P1017,Team Lead,9,Humanitarian Assistance,Assessment,Collaborative,Communication,97.3,29.4,7.5,6.3,6,0,0,0
+E0148,2/12/2026 7:28,4,Alpha,P1002,Analyst,12,Convoy Security,Planning,Time-Critical,Communication,87.5,10.1,6.4,8.5,5,0,0,0
+E0044,2/9/2026 6:33,1,Echo,P1019,Operator,12,Crisis Response,Assessment,Deliberate,Communication,81.3,53.1,6.6,4.7,1,0,0,0
+E0054,2/10/2026 11:30,2,Alpha,P1001,Team Lead,1,Humanitarian Assistance,Assessment,Collaborative,Situational Awareness,83.5,26.4,6.8,4.8,18,0,0,0
+E0071,2/10/2026 6:39,2,Charlie,P1011,Operator,1,Crisis Response,Planning,Time-Critical,Resource Allocation,80.6,14.7,7.3,6.1,9,0,0,0
+E0116,2/11/2026 17:29,3,Charlie,P1010,Analyst,7,Reconnaissance,Planning,Time-Critical,Risk Assessment,74.8,25.9,5,7.2,3,0,0,0
+E0002,2/9/2026 9:59,1,Alpha,P1003,Operator,5,Crisis Response,Planning,Deliberate,Communication,78.8,43.6,7.4,6.1,0,0,0,0
+E0015,2/9/2026 21:30,1,Bravo,P1005,Team Lead,3,Area Defense,Planning,Time-Critical,Resource Allocation,66.8,31.9,6.5,8.4,6,0,0,0
+E0216,2/13/2026 16:24,5,Bravo,P1007,Operator,2,Joint Operations,Execution,Deliberate,Risk Assessment,83.1,48.9,7.2,7.8,4,0,0,0
+E0193,2/12/2026 9:20,4,Echo,P1017,Team Lead,9,Reconnaissance,Planning,Time-Critical,Situational Awareness,74.5,27.6,4.9,8.3,7,0,0,0
+E0046,2/9/2026 12:20,1,Echo,P1019,Operator,12,Humanitarian Assistance,Execution,Time-Critical,Situational Awareness,63.6,31.8,6.1,9.2,2,1,0,0
+E0162,2/12/2026 7:11,4,Bravo,P1008,Communications,11,Convoy Security,Execution,Time-Critical,Risk Assessment,69.1,29.8,5.4,10,3,0,0,0
+E0237,2/13/2026 8:12,5,Echo,P1019,Operator,12,Crisis Response,Execution,Deliberate,Communication,65.9,62.7,4.5,8,1,1,0,1
+E0125,2/11/2026 7:36,3,Delta,P1015,Operator,9,Humanitarian Assistance,Execution,Time-Critical,Resource Allocation,54.7,23.3,4.3,9.8,0,0,0,0
+E0021,2/9/2026 8:40,1,Bravo,P1007,Operator,2,Reconnaissance,Assessment,Deliberate,Situational Awareness,64.3,60,7.1,5.2,2,0,0,0
+E0240,2/13/2026 11:54,5,Echo,P1017,Team Lead,9,Convoy Security,Execution,Deliberate,Situational Awareness,83.8,30.2,5.8,8.6,1,0,0,0
+E0184,2/12/2026 19:06,4,Delta,P1013,Team Lead,4,Reconnaissance,Assessment,Collaborative,Pattern Recognition,86.3,33.1,5.7,6.3,14,1,0,0
+E0081,2/10/2026 10:35,2,Echo,P1017,Team Lead,9,Reconnaissance,Planning,Time-Critical,Risk Assessment,96.3,26,6.6,6.2,0,0,0,0
+E0037,2/9/2026 18:37,1,Delta,P1016,Communications,10,Joint Operations,Planning,Collaborative,Situational Awareness,61.2,40.9,4.8,5.7,7,0,0,0
+E0118,2/11/2026 11:10,3,Charlie,P1009,Team Lead,10,Joint Operations,Planning,Time-Critical,Risk Assessment,77,16.6,7.8,5.4,10,0,0,0
+E0146,2/12/2026 18:33,4,Alpha,P1002,Analyst,12,Humanitarian Assistance,Assessment,Time-Critical,Pattern Recognition,75.7,37.8,8.3,8.7,0,0,0,0
+E0105,2/11/2026 6:39,3,Bravo,P1006,Analyst,12,Area Defense,Assessment,Deliberate,Resource Allocation,78.2,59.5,7.1,6.6,1,0,0,0
+E0088,2/10/2026 18:45,2,Echo,P1017,Team Lead,9,Joint Operations,Execution,Deliberate,Communication,74.9,48.3,5.6,5.6,8,1,0,0
+E0052,2/10/2026 10:58,2,Alpha,P1002,Analyst,12,Convoy Security,Execution,Collaborative,Pattern Recognition,85.5,33.9,7.7,9.4,10,0,0,0
+E0036,2/9/2026 13:31,1,Delta,P1015,Operator,9,Reconnaissance,Execution,Deliberate,Communication,63.8,58.8,6.4,8.8,4,0,0,0
+E0039,2/9/2026 10:15,1,Delta,P1013,Team Lead,4,Area Defense,Planning,Time-Critical,Communication,75.5,30.9,5.6,6.6,2,1,0,0
+E0217,2/13/2026 11:06,5,Bravo,P1008,Communications,11,Humanitarian Assistance,Assessment,Collaborative,Pattern Recognition,89.8,39,5.8,5.1,8,0,0,0
+E0106,2/11/2026 17:16,3,Bravo,P1005,Team Lead,3,Reconnaissance,Execution,Time-Critical,Resource Allocation,66.2,24,4.6,10,5,0,0,0
+E0077,2/10/2026 17:32,2,Delta,P1013,Team Lead,4,Convoy Security,Assessment,Deliberate,Resource Allocation,63,52.7,5.5,7.7,3,0,0,0
+E0136,2/11/2026 8:41,3,Echo,P1019,Operator,12,Humanitarian Assistance,Execution,Collaborative,Situational Awareness,85.4,25.5,6.6,6.7,1,0,0,0
+E0098,2/11/2026 7:42,3,Alpha,P1001,Team Lead,1,Joint Operations,Assessment,Collaborative,Communication,84.7,27.5,8.5,5.9,10,1,0,0
+E0239,2/13/2026 6:15,5,Echo,P1019,Operator,12,Joint Operations,Execution,Deliberate,Situational Awareness,76.6,59.5,7.3,9.2,2,1,0,0
+E0219,2/13/2026 7:05,5,Charlie,P1012,Communications,1,Humanitarian Assistance,Assessment,Time-Critical,Resource Allocation,85.9,24.3,8.3,6.8,2,0,0,0
+E0129,2/11/2026 11:33,3,Delta,P1014,Analyst,4,Convoy Security,Assessment,Collaborative,Resource Allocation,64.2,32.7,5.7,4.9,8,0,0,1
+E0050,2/10/2026 9:48,2,Alpha,P1004,Communications,4,Joint Operations,Execution,Collaborative,Situational Awareness,81.2,37.1,7.4,6.9,7,1,0,1
+E0220,2/13/2026 10:49,5,Charlie,P1011,Operator,1,Convoy Security,Planning,Time-Critical,Communication,87.6,27.7,8.1,6.6,5,0,0,0
+E0019,2/9/2026 14:08,1,Bravo,P1005,Team Lead,3,Joint Operations,Planning,Time-Critical,Communication,85.2,13.9,7.8,6.5,7,0,0,0
+E0159,2/12/2026 11:06,4,Bravo,P1005,Team Lead,3,Crisis Response,Assessment,Collaborative,Resource Allocation,96.7,26.2,8.1,7.2,8,0,0,0
+E0149,2/12/2026 16:36,4,Alpha,P1001,Team Lead,1,Joint Operations,Planning,Deliberate,Pattern Recognition,80.5,43.3,6.3,6.9,7,1,0,1
+E0223,2/13/2026 9:59,5,Charlie,P1011,Operator,1,Area Defense,Assessment,Collaborative,Communication,81.3,35.8,7.6,5.8,6,0,0,0
+E0163,2/12/2026 18:43,4,Bravo,P1005,Team Lead,3,Area Defense,Execution,Collaborative,Pattern Recognition,87.3,29.5,7.3,7.5,13,0,0,1
+E0014,2/9/2026 11:17,1,Bravo,P1006,Analyst,12,Reconnaissance,Assessment,Time-Critical,Resource Allocation,64.9,8.5,5.9,8.9,6,0,0,0
+E0121,2/11/2026 15:29,3,Charlie,P1011,Operator,1,Area Defense,Execution,Collaborative,Resource Allocation,77,38.1,5.3,8.4,9,0,0,0
+E0031,2/9/2026 8:29,1,Delta,P1014,Analyst,4,Convoy Security,Planning,Time-Critical,Resource Allocation,46.9,33.3,4.4,8.4,2,0,1,0
+E0218,2/13/2026 16:51,5,Bravo,P1008,Communications,11,Area Defense,Execution,Time-Critical,Pattern Recognition,60.4,24.6,4.1,7.9,1,0,0,1
+E0119,2/11/2026 8:32,3,Charlie,P1011,Operator,1,Crisis Response,Planning,Deliberate,Communication,79.9,42.1,6.1,4.8,0,0,0,1
+E0076,2/10/2026 10:00,2,Delta,P1015,Operator,9,Convoy Security,Planning,Collaborative,Situational Awareness,70.8,29.9,7.3,5.2,8,0,0,0
+E0150,2/12/2026 21:03,4,Alpha,P1002,Analyst,12,Crisis Response,Assessment,Deliberate,Communication,99.6,60.9,7.9,5.5,0,0,0,1
+E0067,2/10/2026 21:53,2,Charlie,P1012,Communications,1,Convoy Security,Execution,Collaborative,Situational Awareness,74.9,33.8,6.7,6.9,5,0,0,0
+E0096,2/11/2026 15:35,3,Alpha,P1004,Communications,4,Joint Operations,Planning,Collaborative,Situational Awareness,86.8,23.8,8.5,6.6,4,0,0,0
+E0085,2/10/2026 7:43,2,Echo,P1017,Team Lead,9,Area Defense,Planning,Time-Critical,Communication,84.6,25,5.8,7.4,2,0,0,0
+E0202,2/13/2026 7:31,5,Alpha,P1001,Team Lead,1,Reconnaissance,Execution,Collaborative,Risk Assessment,88.3,36.6,6.9,8.2,12,0,0,0
+E0108,2/11/2026 7:20,3,Bravo,P1005,Team Lead,3,Area Defense,Execution,Time-Critical,Pattern Recognition,71.1,32,5.4,10,4,1,0,0
+E0079,2/10/2026 20:32,2,Delta,P1015,Operator,9,Joint Operations,Execution,Collaborative,Risk Assessment,59.3,40,4.4,6.2,5,0,0,0
+E0224,2/13/2026 13:44,5,Charlie,P1011,Operator,1,Convoy Security,Execution,Deliberate,Pattern Recognition,92.4,50.8,8,7.7,4,0,0,0
+E0191,2/12/2026 14:05,4,Echo,P1019,Operator,12,Humanitarian Assistance,Planning,Time-Critical,Risk Assessment,60.2,37.6,5.5,8.3,2,1,0,0
+E0058,2/10/2026 15:32,2,Bravo,P1008,Communications,11,Crisis Response,Planning,Time-Critical,Resource Allocation,61.5,22.6,4.1,6.1,4,0,0,0
+E0091,2/10/2026 16:55,2,Echo,P1020,Communications,11,Joint Operations,Execution,Collaborative,Resource Allocation,76.9,35.7,5.4,8.5,4,0,0,1
+E0057,2/10/2026 9:01,2,Bravo,P1006,Analyst,12,Reconnaissance,Execution,Collaborative,Resource Allocation,87.6,31.9,7.3,8,4,1,0,0
+E0023,2/9/2026 17:49,1,Charlie,P1011,Operator,1,Crisis Response,Planning,Time-Critical,Situational Awareness,61.2,19,6.7,7.3,6,1,0,0
+E0168,2/12/2026 14:31,4,Charlie,P1012,Communications,1,Area Defense,Planning,Deliberate,Risk Assessment,76.2,54.9,6.8,5.6,6,0,0,0
+E0086,2/10/2026 13:25,2,Echo,P1020,Communications,11,Crisis Response,Assessment,Deliberate,Situational Awareness,80.2,53,6.7,6.5,11,0,0,0
+E0231,2/13/2026 19:34,5,Delta,P1014,Analyst,4,Convoy Security,Assessment,Deliberate,Communication,80.7,32.8,6.1,5.9,3,0,1,0
+E0175,2/12/2026 10:22,4,Delta,P1015,Operator,9,Reconnaissance,Execution,Collaborative,Communication,92.1,32.2,7,10,13,0,0,0
+E0047,2/9/2026 17:11,1,Echo,P1019,Operator,12,Area Defense,Planning,Deliberate,Pattern Recognition,74.5,64.6,6.4,6.4,6,0,0,0
+E0234,2/13/2026 9:59,5,Delta,P1016,Communications,10,Area Defense,Planning,Collaborative,Communication,75.1,48.4,7.3,5.8,2,0,0,0
+E0196,2/12/2026 18:18,4,Echo,P1018,Analyst,4,Joint Operations,Assessment,Collaborative,Pattern Recognition,99.6,21.6,6.9,6.4,6,0,0,0
+E0144,2/12/2026 6:47,4,Alpha,P1003,Operator,5,Convoy Security,Assessment,Deliberate,Risk Assessment,80.7,50.7,7.1,3.3,6,0,0,0
+E0207,2/13/2026 19:31,5,Alpha,P1003,Operator,5,Area Defense,Planning,Collaborative,Pattern Recognition,100,24.8,8.8,7.1,10,0,0,0
+E0186,2/12/2026 14:54,4,Echo,P1018,Analyst,4,Crisis Response,Execution,Deliberate,Risk Assessment,84.6,31.4,6.9,8.1,3,0,0,1
