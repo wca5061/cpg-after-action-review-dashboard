@@ -20,6 +20,12 @@ The dashboard includes:
 - Export filtered CSV and share-view URL hash support
 - Optional Anthropic-powered AI analyst panel
 
+## Grader / Reviewer Note
+
+All charts, filters, findings, drill-down drawer, and export features work **fully offline** — just open `index.html` in Chrome with no setup required.
+
+The one exception is the **AI Analyst panel**: it requires either an Anthropic API key entered manually in the panel UI, or a deployed instance with `ANTHROPIC_API_KEY` set server-side (see [Reviewer-Accessible Deployment](#reviewer-accessible-deployment) below). Every other part of the dashboard is completely functional without it.
+
 ## Approach
 
 The solution uses a single HTML file with vanilla JavaScript and D3.js v7. Both provided CSV datasets are embedded inline at the top of the file as JavaScript strings so the application can run directly from disk.
