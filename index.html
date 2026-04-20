@@ -1224,9 +1224,9 @@
           <div class="ai-controls">
             <div class="ai-input-stack">
               <div class="api-key-row">
-                <label for="anthropic-key-input">Anthropic API Key</label>
+                <label for="anthropic-key-input">Anthropic API Key (Optional)</label>
                 <input id="anthropic-key-input" class="terminal-input" type="password" placeholder="sk-ant-..." autocomplete="off" />
-                <span class="small-note">Stored in this browser session only. The browser calls Anthropic directly.</span>
+                <span id="anthropic-access-note" class="small-note">Hosted mode can use a secure server-side proxy. Leave this blank on the deployed site, or enter a key for local review.</span>
               </div>
               <textarea id="ai-question" class="terminal-textarea" placeholder="Ask a question about the exercise data..."></textarea>
             </div>
@@ -2274,51 +2274,72 @@ P1020,Echo,Communications,11`;
     }
 
     /**
-     * Make a streaming or non-streaming Anthropic API call for an AI insight.
-     * @param {object} context
+     * Get the local proxy endpoint when the dashboard is served over HTTP(S).
+     * @returns {string|null}
+     */
+    function getInsightProxyUrl() {
+      if (!["http:", "https:"].includes(window.location.protocol)) {
+        return null;
+      }
+      return `${window.location.origin}/api/anthropic`;
+    }
+
+    /**
+     * Update the helper text for the AI panel based on how the dashboard is running.
+     */
+    function syncInsightAccessNote() {
+      const note = document.getElementById("anthropic-access-note");
+      if (!note) return;
+
+      if (window.location.protocol === "file:") {
+        note.textContent =
+          "Local file mode: enter an Anthropic key to enable the panel. A deployed copy can leave this blank and use the secure server-side proxy.";
+        return;
+      }
+
+      if (["localhost", "127.0.0.1"].includes(window.location.hostname)) {
+        note.textContent =
+          "Local server mode: enter an Anthropic key unless this host also exposes /api/anthropic. A deployed copy can leave this blank and use the secure server-side proxy.";
+        return;
+      }
+
+      note.textContent =
+        "Hosted mode: leave this blank to use the secure server-side proxy, or enter a key to test a direct browser call.";
+    }
+
+    /**
+     * Read a failed AI request response into a human-friendly error message.
+     * @param {Response} response
+     * @returns {Promise<string>}
+     */
+    async function readInsightError(response) {
+      let detail = `${response.status} ${response.statusText}`;
+
+      try {
+        const contentType = response.headers.get("content-type") || "";
+        if (contentType.includes("application/json")) {
+          const errorBody = await response.json();
+          detail = errorBody?.error?.message || errorBody?.message || detail;
+        } else {
+          const text = (await response.text()).trim();
+          if (text) {
+            detail = text;
+          }
+        }
+      } catch (error) {
+        console.warn("Unable to parse AI error response:", error);
+      }
+
+      return detail;
+    }
+
+    /**
+     * Consume an Anthropic response, supporting both SSE streaming and plain JSON.
+     * @param {Response} response
      * @param {(text: string) => void} onDelta
      * @returns {Promise<string>}
      */
-    async function fetchInsight(context, onDelta) {
-      const apiKey = document.getElementById("anthropic-key-input").value.trim();
-      if (!apiKey) {
-        throw new Error("Enter an Anthropic API key to generate an insight.");
-      }
-
-      const body = {
-        model: "claude-sonnet-4-20250514",
-        max_tokens: 800,
-        system: "You are a military cognitive performance analyst reviewing after-action data from a 5-day training exercise. Answer questions concisely and analytically, citing specific teams, metrics, or days when relevant. Format with brief headers where useful.",
-        stream: true,
-        messages: [
-          {
-            role: "user",
-            content: `Exercise analysis context:\n${JSON.stringify(context, null, 2)}`
-          }
-        ]
-      };
-
-      const response = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: {
-          "content-type": "application/json",
-          "anthropic-version": "2023-06-01",
-          "x-api-key": apiKey
-        },
-        body: JSON.stringify(body)
-      });
-
-      if (!response.ok) {
-        let detail = `${response.status} ${response.statusText}`;
-        try {
-          const errorBody = await response.json();
-          detail = errorBody?.error?.message || detail;
-        } catch (error) {
-          console.warn("Unable to parse Anthropic error response:", error);
-        }
-        throw new Error(detail);
-      }
-
+    async function readInsightResponse(response, onDelta) {
       const contentType = response.headers.get("content-type") || "";
       if (!contentType.includes("text/event-stream") || !response.body) {
         const json = await response.json();
@@ -2363,6 +2384,68 @@ P1020,Echo,Communications,11`;
       }
 
       return fullText;
+    }
+
+    /**
+     * Make a streaming or non-streaming Anthropic API call for an AI insight.
+     * @param {object} context
+     * @param {(text: string) => void} onDelta
+     * @returns {Promise<string>}
+     */
+    async function fetchInsight(context, onDelta) {
+      const apiKey = document.getElementById("anthropic-key-input").value.trim();
+      const proxyUrl = getInsightProxyUrl();
+
+      const body = {
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 800,
+        system: "You are a military cognitive performance analyst reviewing after-action data from a 5-day training exercise. Answer questions concisely and analytically, citing specific teams, metrics, or days when relevant. Format with brief headers where useful.",
+        stream: true,
+        messages: [
+          {
+            role: "user",
+            content: `Exercise analysis context:\n${JSON.stringify(context, null, 2)}`
+          }
+        ]
+      };
+
+      let response;
+
+      if (apiKey) {
+        response = await fetch("https://api.anthropic.com/v1/messages", {
+          method: "POST",
+          headers: {
+            "content-type": "application/json",
+            "anthropic-version": "2023-06-01",
+            "x-api-key": apiKey
+          },
+          body: JSON.stringify(body)
+        });
+      } else if (proxyUrl) {
+        response = await fetch(proxyUrl, {
+          method: "POST",
+          headers: {
+            "content-type": "application/json"
+          },
+          body: JSON.stringify(body)
+        });
+      } else {
+        throw new Error("This local file copy needs an Anthropic API key. For reviewer access, deploy the repo with ANTHROPIC_API_KEY so /api/anthropic can handle requests securely.");
+      }
+
+      if (!response.ok) {
+        let detail = await readInsightError(response);
+
+        if (!apiKey && response.status === 404) {
+          detail = "AI proxy not found. Deploy this repo on Vercel or another host that serves /api/anthropic, or enter an Anthropic key for local testing.";
+        } else if (!apiKey && response.status === 500 && !detail.includes("ANTHROPIC_API_KEY")) {
+          detail = `${detail} Configure the deployment with ANTHROPIC_API_KEY.`;
+        }
+
+        throw new Error(detail);
+      }
+
+      return readInsightResponse(response, onDelta);
     }
 
     /* =========================
@@ -3634,7 +3717,11 @@ P1020,Echo,Communications,11`;
         return;
       }
 
-      sessionStorage.setItem("exercise-dashboard-anthropic-key", keyInput.value);
+      if (keyInput.value.trim()) {
+        sessionStorage.setItem("exercise-dashboard-anthropic-key", keyInput.value.trim());
+      } else {
+        sessionStorage.removeItem("exercise-dashboard-anthropic-key");
+      }
 
       const filtered = getFilteredData();
       const context = buildInsightContext(filtered, question);
@@ -3823,6 +3910,8 @@ P1020,Echo,Communications,11`;
       if (savedKey) {
         document.getElementById("anthropic-key-input").value = savedKey;
       }
+
+      syncInsightAccessNote();
 
       let resizeTimer = null;
       window.addEventListener("resize", () => {

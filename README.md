@@ -44,9 +44,12 @@ Key implementation choices:
 
 ```text
 .
+├── .env.example
 ├── index.html
 ├── FINDINGS.md
 ├── .gitignore
+├── api
+│   └── anthropic.js
 └── data
     ├── exercise_performance_data.csv
     └── participant_roster.csv
@@ -85,13 +88,38 @@ Then open:
 http://localhost:8000
 ```
 
+Note: a plain static server does not provide the secure AI proxy. For local AI testing, enter an Anthropic key in the panel. For reviewer access without a browser key, deploy the repo with `ANTHROPIC_API_KEY`.
+
 ## AI Analyst Panel
 
-The AI panel is optional and only activates if an Anthropic API key is entered in the interface.
+The AI panel is optional and now supports two access modes:
 
-- The dashboard works fully without an API key.
-- The only network request in the app is the optional Anthropic Messages API call.
-- The AI request is constructed from the currently filtered dataset summary plus the user’s question.
+- Local review mode: open `index.html` directly and paste an Anthropic API key into the panel.
+- Hosted reviewer mode: deploy the repository with a server-side `ANTHROPIC_API_KEY`, and the panel will automatically use the same-origin `/api/anthropic` proxy with no key entry required from reviewers.
+
+The dashboard still works fully without AI access.
+
+## Reviewer-Accessible Deployment
+
+If you want the company to test the AI panel themselves, deploy this repo instead of sharing only the raw HTML file.
+
+### Recommended path: Vercel
+
+1. Import the GitHub repository into Vercel.
+2. Add the environment variable `ANTHROPIC_API_KEY`.
+3. Deploy the project.
+4. Share the deployed URL.
+
+When the dashboard runs from a hosted HTTP(S) URL, the frontend automatically tries `/api/anthropic` first if no browser key is entered. That keeps the Anthropic credential server-side while preserving the existing local fallback flow.
+
+### Files added for hosted AI access
+
+- `api/anthropic.js`: lightweight server-side proxy for Anthropic Messages API requests
+- `.env.example`: example environment variable name for local or hosted configuration
+
+### Important note
+
+Do not commit a real Anthropic key into the repository or hard-code it into `index.html`. The hosted proxy keeps reviewer access convenient without exposing the secret in a public client bundle.
 
 ## Written Findings
 
@@ -110,4 +138,3 @@ AI tools were used to accelerate implementation, code organization, and polishin
 - drafting submission documentation
 
 All final implementation decisions, validation, and submission packaging were reviewed and assembled deliberately for this project.
-
