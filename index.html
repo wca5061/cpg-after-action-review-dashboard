@@ -2547,16 +2547,12 @@ P1020,Echo,Communications,11`;
       container.html("");
 
       const metrics = [
-        {
-          key: "accuracy_score",
-          label: "Avg Accuracy Score",
-          color: "#10b981",
-          better: "higher",
-          value: d3.mean(data, (d) => d.accuracy_score) ?? 0,
-          baseline: globalStats.means.accuracy_score,
-          series: buildDaySeries(data, (d) => d.accuracy_score),
-          formatter: (value) => `${value.toFixed(1)}%`
-        },
+        { label: "Accuracy Score" },
+        { label: "Response Speed" },
+        { label: "Confidence Rating" },
+        { label: "Low Stress" },
+        { label: "Comm. Effectiveness" }
+      ];
         {
           key: "response_time_sec",
           label: "Avg Response Time",
