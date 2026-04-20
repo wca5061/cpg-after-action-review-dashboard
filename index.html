@@ -572,6 +572,17 @@
       font-size: 11px;
     }
 
+    .legend-stack {
+      display: grid;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .legend-stack .legend-row,
+    .legend-stack .shape-legend {
+      margin-top: 0;
+    }
+
     .shape-legend-left,
     .shape-legend-right {
       display: flex;
@@ -1178,14 +1189,14 @@
           <div id="scatter-wrap" class="chart-wrap tall">
             <svg id="scatter-chart" class="chart-svg"></svg>
           </div>
-          <div id="scatter-legend" class="shape-legend"></div>
+          <div id="scatter-legend" class="legend-stack"></div>
         </article>
 
         <article class="panel panel-wide">
           <div class="panel-head">
             <div>
               <h2 class="panel-title">Error Flag Analysis</h2>
-              <p class="panel-subtitle">Stacked event composition showing clean decisions plus the three error categories. Toggle between daily and scenario concentration.</p>
+              <p class="panel-subtitle">Stacked unique-event composition showing clean decisions, single-flag issues, and a dedicated multi-flag band. Toggle between daily and scenario concentration.</p>
             </div>
             <div class="panel-actions">
               <button class="view-toggle active" data-error-mode="exercise_day" type="button">By Day</button>
@@ -1609,9 +1620,10 @@ P1020,Echo,Communications,11`;
     ];
     const ERROR_SEGMENTS = [
       { key: "clean_events", label: "Clean Event", color: "rgba(148,163,184,0.28)" },
-      { key: "information_overload_flag", label: "Information Overload", color: "#f59e0b" },
-      { key: "communication_breakdown_flag", label: "Communication Breakdown", color: "#ef4444" },
-      { key: "fixation_error_flag", label: "Fixation Error", color: "#a78bfa" }
+      { key: "information_only_events", label: "Information Overload", color: "#f59e0b" },
+      { key: "communication_only_events", label: "Communication Breakdown", color: "#ef4444" },
+      { key: "fixation_only_events", label: "Fixation Error", color: "#a78bfa" },
+      { key: "multi_flag_events", label: "Multi-Flag Event", color: "#ec4899" }
     ];
 
     const timeParser = d3.timeParse("%m/%d/%Y %H:%M");
@@ -1705,6 +1717,17 @@ P1020,Echo,Communications,11`;
      * @returns {object}
      */
     function computeGlobalStats(data) {
+      const teamAverages = TEAM_ORDER.map((team) => {
+        const rows = data.filter((d) => d.team === team);
+        if (!rows.length) return null;
+
+        return {
+          team,
+          response_time_sec: d3.mean(rows, (d) => d.response_time_sec) ?? 0,
+          communication_events: d3.mean(rows, (d) => d.communication_events) ?? 0
+        };
+      }).filter(Boolean);
+
       return {
         means: {
           accuracy_score: d3.mean(data, (d) => d.accuracy_score) ?? 0,
@@ -1718,6 +1741,10 @@ P1020,Echo,Communications,11`;
           confidence_rating: d3.extent(data, (d) => d.confidence_rating),
           stress_level: d3.extent(data, (d) => d.stress_level),
           communication_events: d3.extent(data, (d) => d.communication_events)
+        },
+        teamMeanExtents: {
+          response_time_sec: d3.extent(teamAverages, (d) => d.response_time_sec),
+          communication_events: d3.extent(teamAverages, (d) => d.communication_events)
         }
       };
     }
@@ -2138,14 +2165,14 @@ P1020,Echo,Communications,11`;
      * Build per-day series for a metric.
      * @param {object[]} data
      * @param {(row: object) => number} accessor
-     * @returns {{day:number,value:number}[]}
+     * @returns {{day:number,value:number|null}[]}
      */
     function buildDaySeries(data, accessor) {
       return DAY_ORDER.map((day) => {
         const rows = data.filter((d) => d.exercise_day === day);
         return {
           day,
-          value: rows.length ? (d3.mean(rows, accessor) ?? 0) : 0
+          value: rows.length ? (d3.mean(rows, accessor) ?? 0) : null
         };
       });
     }
@@ -2153,7 +2180,7 @@ P1020,Echo,Communications,11`;
     /**
      * Render a tiny sparkline into an SVG selection.
      * @param {d3.Selection<SVGSVGElement, unknown, null, undefined>} svg
-     * @param {{day:number,value:number}[]} series
+     * @param {{day:number,value:number|null}[]} series
      * @param {string} color
      */
     function renderSparkline(svg, series, color) {
@@ -2161,14 +2188,28 @@ P1020,Echo,Communications,11`;
       const height = 40;
       const margin = { top: 4, right: 2, bottom: 4, left: 2 };
       const x = d3.scaleLinear().domain(d3.extent(series, (d) => d.day)).range([margin.left, width - margin.right]);
-      const extent = d3.extent(series, (d) => d.value);
-      const padded = extent[0] === extent[1] ? [extent[0] - 1, extent[1] + 1] : extent;
-      const y = d3.scaleLinear().domain(padded).nice().range([height - margin.bottom, margin.top]);
-      const line = d3.line().x((d) => x(d.day)).y((d) => y(d.value)).curve(d3.curveMonotoneX);
-      const area = d3.area().x((d) => x(d.day)).y0(height - margin.bottom).y1((d) => y(d.value)).curve(d3.curveMonotoneX);
+      const validSeries = series.filter((d) => d.value != null);
 
       svg.selectAll("*").remove();
       svg.attr("viewBox", `0 0 ${width} ${height}`);
+
+      if (!validSeries.length) return;
+
+      const extent = d3.extent(validSeries, (d) => d.value);
+      const padded = extent[0] === extent[1] ? [extent[0] - 1, extent[1] + 1] : extent;
+      const y = d3.scaleLinear().domain(padded).nice().range([height - margin.bottom, margin.top]);
+      const line = d3.line()
+        .defined((d) => d.value != null)
+        .x((d) => x(d.day))
+        .y((d) => y(d.value))
+        .curve(d3.curveMonotoneX);
+      const area = d3.area()
+        .defined((d) => d.value != null)
+        .x((d) => x(d.day))
+        .y0(height - margin.bottom)
+        .y1((d) => y(d.value))
+        .curve(d3.curveMonotoneX);
+
       svg.append("path")
         .datum(series)
         .attr("fill", d3.color(color).copy({ opacity: 0.15 }))
@@ -2180,12 +2221,14 @@ P1020,Echo,Communications,11`;
         .attr("stroke-width", 2)
         .attr("d", line);
       svg.selectAll("circle")
-        .data(series)
+        .data(validSeries)
         .join("circle")
         .attr("cx", (d) => x(d.day))
         .attr("cy", (d) => y(d.value))
         .attr("r", 2.6)
-        .attr("fill", color);
+        .attr("fill", color)
+        .attr("stroke", "#0a0e1a")
+        .attr("stroke-width", 0.8);
     }
 
     /**
@@ -2500,7 +2543,7 @@ P1020,Echo,Communications,11`;
           baseline: globalStats.means.error_rate,
           series: DAY_ORDER.map((day) => {
             const rows = data.filter((d) => d.exercise_day === day);
-            return { day, value: calcAnyFlagRate(rows) };
+            return { day, value: rows.length ? calcAnyFlagRate(rows) : null };
           }),
           formatter: (value) => `${value.toFixed(1)}%`
         }
@@ -2561,52 +2604,66 @@ P1020,Echo,Communications,11`;
       const transition = d3.transition().duration(400).ease(d3.easeCubicOut);
 
       const metrics = [
-        {
-          label: "Accuracy Score",
-          accessor: (rows) => d3.mean(rows, (d) => d.accuracy_score) ?? 0,
-          normalize: (value) => normalizeToHundred(value, globalStats.extents.accuracy_score)
-        },
-        {
-          label: "Response Speed",
-          accessor: (rows) => d3.mean(rows, (d) => d.response_time_sec) ?? 0,
-          normalize: (value) => normalizeToHundred(value, globalStats.extents.response_time_sec, true)
-        },
-        {
-          label: "Confidence Rating",
-          accessor: (rows) => d3.mean(rows, (d) => d.confidence_rating) ?? 0,
-          normalize: (value) => normalizeToHundred(value, globalStats.extents.confidence_rating)
-        },
-        {
-          label: "Low Stress",
-          accessor: (rows) => d3.mean(rows, (d) => d.stress_level) ?? 0,
-          normalize: (value) => normalizeToHundred(value, globalStats.extents.stress_level, true)
-        },
-        {
-          label: "Communication Effectiveness",
-          accessor: (rows) => {
-            const commScore = normalizeToHundred(
-              d3.mean(rows, (d) => d.communication_events) ?? 0,
-              globalStats.extents.communication_events
-            );
-            const breakdownPenalty = (d3.mean(rows, (d) => d.communication_breakdown_flag) ?? 0) * 35;
-            return Math.max(0, Math.min(100, commScore - breakdownPenalty));
-          },
-          normalize: (value) => value
-        }
+        { label: "Accuracy Score" },
+        { label: "Response Speed" },
+        { label: "Confidence Rating" },
+        { label: "Low Stress" },
+        { label: "Communication Effectiveness" }
       ];
 
       const teamSeries = teams.map((team) => {
         const rows = data.filter((d) => d.team === team);
+        if (!rows.length) return null;
+
+        const accuracy = d3.mean(rows, (d) => d.accuracy_score) ?? 0;
+        const responseTime = d3.mean(rows, (d) => d.response_time_sec) ?? 0;
+        const confidence = d3.mean(rows, (d) => d.confidence_rating) ?? 0;
+        const stress = d3.mean(rows, (d) => d.stress_level) ?? 0;
+        const communicationEvents = d3.mean(rows, (d) => d.communication_events) ?? 0;
+        const breakdownRate = d3.mean(rows, (d) => d.communication_breakdown_flag) ?? 0;
+        const communicationVolume = normalizeToHundred(
+          communicationEvents,
+          globalStats.teamMeanExtents.communication_events
+        );
+        const communicationScore = Math.max(0, Math.min(100, communicationVolume - (breakdownRate * 35)));
+
         return {
           team,
           rows,
-          values: metrics.map((metric) => {
-            const raw = metric.accessor(rows);
-            const score = metric.normalize(raw);
-            return { axis: metric.label, raw, score };
-          })
+          values: [
+            {
+              axis: "Accuracy Score",
+              raw: accuracy,
+              score: accuracy,
+              detail: `${accuracy.toFixed(1)}% avg accuracy`
+            },
+            {
+              axis: "Response Speed",
+              raw: responseTime,
+              score: normalizeToHundred(responseTime, globalStats.teamMeanExtents.response_time_sec, true),
+              detail: `${responseTime.toFixed(1)}s avg response time`
+            },
+            {
+              axis: "Confidence Rating",
+              raw: confidence,
+              score: normalizeToHundred(confidence, [1, 10]),
+              detail: `${confidence.toFixed(1)} / 10 avg confidence`
+            },
+            {
+              axis: "Low Stress",
+              raw: stress,
+              score: normalizeToHundred(stress, [1, 10], true),
+              detail: `${stress.toFixed(1)} / 10 avg stress`
+            },
+            {
+              axis: "Communication Effectiveness",
+              raw: communicationScore,
+              score: communicationScore,
+              detail: `${communicationEvents.toFixed(1)} avg comm events | ${(breakdownRate * 100).toFixed(1)}% breakdown rate`
+            }
+          ]
         };
-      }).filter((entry) => entry.rows.length);
+      }).filter(Boolean);
 
       if (!teamSeries.length) {
         renderEmptySvg(svg, width, height, "The selected teams have no events in this slice.");
@@ -2692,7 +2749,10 @@ P1020,Echo,Communications,11`;
       polygons.on("mouseenter", function(event, d) {
         d3.select(this).raise().transition().duration(160).style("opacity", 1);
         const lines = d.values
-          .map((value) => `<div><span class="mono">${value.axis}</span>: ${value.score.toFixed(1)}</div>`)
+          .map((value) => `
+            <div><span class="mono">${value.axis}</span>: ${value.score.toFixed(1)}</div>
+            <div class="mono" style="opacity:0.72; padding-left:10px;">${value.detail}</div>
+          `)
           .join("");
         showTooltip(event, `<strong>${d.team}</strong>${lines}<div class="mono" style="margin-top:8px;">${d.rows.length} events</div>`);
       }).on("mousemove", moveTooltip)
@@ -3197,25 +3257,29 @@ P1020,Echo,Communications,11`;
 
       const legend = document.getElementById("scatter-legend");
       legend.innerHTML = `
-        <div class="shape-legend-left">
-          <span class="legend-label">
-            <svg class="shape-swatch" width="12" height="12" viewBox="0 0 12 12"><circle cx="6" cy="6" r="4" fill="#cbd5e1"></circle></svg>
-            Deliberate
-          </span>
-          <span class="legend-label">
-            <svg class="shape-swatch" width="12" height="12" viewBox="0 0 12 12"><path d="M6 1 L11 11 L1 11 Z" fill="#cbd5e1"></path></svg>
-            Time-Critical
-          </span>
-          <span class="legend-label">
-            <svg class="shape-swatch" width="12" height="12" viewBox="0 0 12 12"><rect x="2" y="2" width="8" height="8" fill="#cbd5e1"></rect></svg>
-            Collaborative
-          </span>
-        </div>
-        <div class="shape-legend-right">
-          <span class="legend-label">Dot size = response time</span>
-          <span class="legend-label">Dashed lines = team regression</span>
+        <div id="scatter-team-legend" class="legend-row"></div>
+        <div class="shape-legend">
+          <div class="shape-legend-left">
+            <span class="legend-label">
+              <svg class="shape-swatch" width="12" height="12" viewBox="0 0 12 12"><circle cx="6" cy="6" r="4" fill="#cbd5e1"></circle></svg>
+              Deliberate
+            </span>
+            <span class="legend-label">
+              <svg class="shape-swatch" width="12" height="12" viewBox="0 0 12 12"><path d="M6 1 L11 11 L1 11 Z" fill="#cbd5e1"></path></svg>
+              Time-Critical
+            </span>
+            <span class="legend-label">
+              <svg class="shape-swatch" width="12" height="12" viewBox="0 0 12 12"><rect x="2" y="2" width="8" height="8" fill="#cbd5e1"></rect></svg>
+              Collaborative
+            </span>
+          </div>
+          <div class="shape-legend-right">
+            <span class="legend-label">Dot size = response time</span>
+            <span class="legend-label">Dashed lines = team regression</span>
+          </div>
         </div>
       `;
+      renderTeamLegend("scatter-team-legend", teams);
     }
 
     /* =========================
@@ -3249,15 +3313,20 @@ P1020,Echo,Communications,11`;
         const rows = data.filter((d) =>
           appState.errorMode === "exercise_day" ? d.exercise_day === group.key : d.scenario === group.key
         );
+        const classifiedRows = rows.map((row) => ({
+          row,
+          flagCount: row.information_overload_flag + row.communication_breakdown_flag + row.fixation_error_flag
+        }));
         return {
           group: group.key,
           label: group.label,
           rows,
           total: rows.length,
-          clean_events: rows.filter((d) => !d.any_flag).length,
-          information_overload_flag: rows.filter((d) => d.information_overload_flag).length,
-          communication_breakdown_flag: rows.filter((d) => d.communication_breakdown_flag).length,
-          fixation_error_flag: rows.filter((d) => d.fixation_error_flag).length
+          clean_events: classifiedRows.filter((d) => d.flagCount === 0).length,
+          information_only_events: classifiedRows.filter((d) => d.flagCount === 1 && d.row.information_overload_flag).length,
+          communication_only_events: classifiedRows.filter((d) => d.flagCount === 1 && d.row.communication_breakdown_flag).length,
+          fixation_only_events: classifiedRows.filter((d) => d.flagCount === 1 && d.row.fixation_error_flag).length,
+          multi_flag_events: classifiedRows.filter((d) => d.flagCount > 1).length
         };
       }).filter((d) => d.total > 0);
 
@@ -3270,10 +3339,7 @@ P1020,Echo,Communications,11`;
       const innerWidth = width - margin.left - margin.right;
       const innerHeight = height - margin.top - margin.bottom;
       const x = d3.scaleBand().domain(summary.map((d) => d.group)).range([0, innerWidth]).padding(0.16);
-      const occurrenceMax = d3.max(summary, (d) =>
-        ERROR_SEGMENTS.reduce((sum, segment) => sum + d[segment.key], 0)
-      ) ?? 0;
-      const y = d3.scaleLinear().domain([0, occurrenceMax]).nice().range([innerHeight, 0]);
+      const y = d3.scaleLinear().domain([0, d3.max(summary, (d) => d.total) ?? 0]).nice().range([innerHeight, 0]);
       const g = svg.append("g").attr("transform", `translate(${margin.left}, ${margin.top})`);
       const stack = d3.stack().keys(ERROR_SEGMENTS.map((segment) => segment.key))(summary);
       const transition = d3.transition().duration(400).ease(d3.easeCubicOut);
@@ -3337,9 +3403,15 @@ P1020,Echo,Communications,11`;
         .on("mousemove", moveTooltip)
         .on("mouseleave", hideTooltip)
         .on("click", (_, d) => {
-          const subset = d.key === "clean_events"
-            ? d.datum.rows.filter((row) => !row.any_flag)
-            : d.datum.rows.filter((row) => row[d.key]);
+          const subset = d.datum.rows.filter((row) => {
+            const flagCount = row.information_overload_flag + row.communication_breakdown_flag + row.fixation_error_flag;
+            if (d.key === "clean_events") return flagCount === 0;
+            if (d.key === "information_only_events") return flagCount === 1 && row.information_overload_flag;
+            if (d.key === "communication_only_events") return flagCount === 1 && row.communication_breakdown_flag;
+            if (d.key === "fixation_only_events") return flagCount === 1 && row.fixation_error_flag;
+            if (d.key === "multi_flag_events") return flagCount > 1;
+            return false;
+          });
           openDrawer(`${d.datum.label} · ${ERROR_SEGMENTS.find((segment) => segment.key === d.key)?.label}`, subset);
         });
 
@@ -3353,7 +3425,7 @@ P1020,Echo,Communications,11`;
       });
       const note = document.createElement("div");
       note.className = "legend-label";
-      note.textContent = "Multi-flag events contribute to each applicable error segment.";
+      note.textContent = "Stacks are mutually exclusive; multi-flag rows are isolated in a dedicated band.";
       legend.appendChild(note);
     }
 
