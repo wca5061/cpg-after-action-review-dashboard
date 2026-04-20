@@ -91,13 +91,13 @@ http://localhost:8000
 Note: a plain static server does not provide the secure AI proxy. For local AI testing, enter an Anthropic key in the panel. For reviewer access without a browser key, deploy the repo with `ANTHROPIC_API_KEY`.
 
 ## AI Analyst Panel
-
-The AI panel is optional and now supports two access modes:
-
+The AI panel is optional and supports two access modes:
 - Local review mode: open `index.html` directly and paste an Anthropic API key into the panel.
 - Hosted reviewer mode: deploy the repository with a server-side `ANTHROPIC_API_KEY`, and the panel will automatically use the same-origin `/api/anthropic` proxy with no key entry required from reviewers.
 
 The dashboard still works fully without AI access.
+
+> **Note on AI Panel access:** The AI analyst panel requires an Anthropic API key to activate. To test it, paste your own `sk-ant-...` key directly into the key field in the panel — no setup required. If you'd like temporary reviewer access without using your own key, reach out and I'll provide one.
 
 ## Reviewer-Accessible Deployment
 
