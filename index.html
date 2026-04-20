@@ -2630,7 +2630,7 @@ P1020,Echo,Communications,11`;
       const svg = d3.select("#radar-chart");
       const width = containerWidth("radar-wrap");
       const height = 430;
-      const radius = Math.min(width, height) * 0.32;
+      const radius = Math.min(width, height) * 0.28;
       const centerX = width / 2;
       const centerY = height / 2 - 8;
       const teams = getSelectedTeams();
@@ -2651,7 +2651,7 @@ P1020,Echo,Communications,11`;
         { label: "Response Speed" },
         { label: "Confidence Rating" },
         { label: "Low Stress" },
-        { label: "Comm. Effect." }
+        { label: "Communication Effectiveness" }
       ];
 
       const teamSeries = teams.map((team) => {
