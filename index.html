@@ -2543,76 +2543,80 @@ P1020,Echo,Communications,11`;
      * @param {object[]} data
      */
     function renderKpis(data) {
-      const container = d3.select("#kpi-strip");
-      container.html("");
+  const container = d3.select("#kpi-strip");
+  container.html("");
 
-        const metrics = [
-          { label: "Accuracy Score" },
-          { label: "Response Speed" },
-          { label: "Confidence Rating" },
-          { label: "Low Stress" },
-          { label: "Comm. Effectiveness" }
-        ];
-        {
-          key: "response_time_sec",
-          label: "Avg Response Time",
-          color: "#00d4ff",
-          better: "lower",
-          value: d3.mean(data, (d) => d.response_time_sec) ?? 0,
-          baseline: globalStats.means.response_time_sec,
-          series: buildDaySeries(data, (d) => d.response_time_sec),
-          formatter: (value) => `${value.toFixed(1)}s`
-        },
-        {
-          key: "stress_level",
-          label: "Avg Stress Level",
-          color: "#f59e0b",
-          better: "lower",
-          value: d3.mean(data, (d) => d.stress_level) ?? 0,
-          baseline: globalStats.means.stress_level,
-          series: buildDaySeries(data, (d) => d.stress_level),
-          formatter: (value) => value.toFixed(1)
-        },
-        {
-          key: "error_rate",
-          label: "Error Flag Rate",
-          color: "#ef4444",
-          better: "lower",
-          value: calcAnyFlagRate(data),
-          baseline: globalStats.means.error_rate,
-          series: DAY_ORDER.map((day) => {
-            const rows = data.filter((d) => d.exercise_day === day);
-            return { day, value: rows.length ? calcAnyFlagRate(rows) : null };
-          }),
-          formatter: (value) => `${value.toFixed(1)}%`
-        }
-      ];
-
-      metrics.forEach((metric) => {
-        const delta = metric.value - metric.baseline;
-        const deltaDirection = delta > 0 ? "▲" : delta < 0 ? "▼" : "■";
-        const improved = metric.better === "higher" ? delta >= 0 : delta <= 0;
-
-        const card = container.append("div").attr("class", "kpi-card");
-        card.html(`
-          <div class="kpi-label">${metric.label}</div>
-          <div class="kpi-value-row">
-            <div class="kpi-value">${data.length ? metric.formatter(metric.value) : "—"}</div>
-            <div class="kpi-delta ${delta === 0 ? "" : improved ? "positive" : "negative"}">
-              ${deltaDirection} ${Math.abs(delta).toFixed(1)} vs overall
-            </div>
-          </div>
-          <svg class="chart-svg" aria-hidden="true"></svg>
-          <div class="sparkline-label">
-            <span>Day 1</span>
-            <span>Day 5</span>
-          </div>
-        `);
-
-        const spark = card.select("svg");
-        renderSparkline(spark, metric.series, metric.color);
-      });
+  const metrics = [
+    {
+      key: "accuracy_score",
+      label: "Avg Accuracy Score",
+      color: "#10b981",
+      better: "higher",
+      value: d3.mean(data, (d) => d.accuracy_score) ?? 0,
+      baseline: globalStats.means.accuracy_score,
+      series: buildDaySeries(data, (d) => d.accuracy_score),
+      formatter: (value) => `${value.toFixed(1)}%`
+    },
+    {
+      key: "response_time_sec",
+      label: "Avg Response Time",
+      color: "#00d4ff",
+      better: "lower",
+      value: d3.mean(data, (d) => d.response_time_sec) ?? 0,
+      baseline: globalStats.means.response_time_sec,
+      series: buildDaySeries(data, (d) => d.response_time_sec),
+      formatter: (value) => `${value.toFixed(1)}s`
+    },
+    {
+      key: "stress_level",
+      label: "Avg Stress Level",
+      color: "#f59e0b",
+      better: "lower",
+      value: d3.mean(data, (d) => d.stress_level) ?? 0,
+      baseline: globalStats.means.stress_level,
+      series: buildDaySeries(data, (d) => d.stress_level),
+      formatter: (value) => value.toFixed(1)
+    },
+    {
+      key: "error_rate",
+      label: "Error Flag Rate",
+      color: "#ef4444",
+      better: "lower",
+      value: calcAnyFlagRate(data),
+      baseline: globalStats.means.error_rate,
+      series: DAY_ORDER.map((day) => {
+        const rows = data.filter((d) => d.exercise_day === day);
+        return { day, value: rows.length ? calcAnyFlagRate(rows) : null };
+      }),
+      formatter: (value) => `${value.toFixed(1)}%`
     }
+  ];
+
+  metrics.forEach((metric) => {
+    const delta = metric.value - metric.baseline;
+    const deltaDirection = delta > 0 ? "▲" : delta < 0 ? "▼" : "■";
+    const improved = metric.better === "higher" ? delta >= 0 : delta <= 0;
+
+    const card = container.append("div").attr("class", "kpi-card");
+    card.html(`
+      <div class="kpi-label">${metric.label}</div>
+      <div class="kpi-value-row">
+        <div class="kpi-value">${data.length ? metric.formatter(metric.value) : "—"}</div>
+        <div class="kpi-delta ${delta === 0 ? "" : improved ? "positive" : "negative"}">
+          ${deltaDirection} ${Math.abs(delta).toFixed(1)} vs overall
+        </div>
+      </div>
+      <svg class="chart-svg" aria-hidden="true"></svg>
+      <div class="sparkline-label">
+        <span>Day 1</span>
+        <span>Day 5</span>
+      </div>
+    `);
+
+    const spark = card.select("svg");
+    renderSparkline(spark, metric.series, metric.color);
+  });
+}
 
     /* =========================
        CHARTS: RADAR
