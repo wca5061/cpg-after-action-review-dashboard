@@ -3064,7 +3064,7 @@ P1020,Echo,Communications,11`;
       const innerHeight = height - margin.top - margin.bottom;
       const x = d3.scaleBand().domain(teams).range([0, innerWidth]).paddingInner(0.08).paddingOuter(0.02);
       const y = d3.scaleBand().domain(DOMAIN_ORDER).range([0, innerHeight]).paddingInner(0.08).paddingOuter(0.02);
-      const color = d3.scaleLinear().domain([60, 80, 100]).range(["#ef4444", "#f59e0b", "#10b981"]).clamp(true);
+      const color = d3.scaleLinear().domain([60, 80, 100]).range(["#ef4444", "#facc15", "#22c55e"]).clamp(true);
       const g = svg.append("g").attr("transform", `translate(${margin.left}, ${margin.top})`);
       const defs = svg.append("defs");
       defs.append("pattern")
